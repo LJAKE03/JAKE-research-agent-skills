@@ -1,0 +1,18 @@
+# Backups are generated artifacts and are intentionally kept outside Git history.
+backups/*.zip
+backups/*.7z
+backups/*.tar
+backups/*.gz
+
+# Machine-specific and temporary files.
+*.tmp
+*.temp
+*.log
+*.bak
+*.swp
+Thumbs.db
+Desktop.ini
+
+# Test/project scratch output.
+test-output/
+project-template/.scratch/
