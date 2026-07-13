@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "tiers": {
+    "strategic": {
+      "model": "gpt-5.6-sol",
+      "reasoning_effort": "xhigh",
+      "responsibility": "research strategy, key judgement, evidence review, and final acceptance"
+    },
+    "support": {
+      "model": "gpt-5.6-terra",
+      "reasoning_effort": "medium",
+      "sandbox_mode": "read-only",
+      "responsibility": "bounded extraction, scanning, evidence inventory, and deterministic checks"
+    },
+    "economy": {
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "low",
+      "sandbox_mode": "read-only",
+      "responsibility": "mechanical formatting of complete and confirmed content"
+    }
+  },
+  "delegation": {
+    "max_threads": 2,
+    "max_depth": 1,
+    "subagents_may_delegate": false,
+    "main_agent_final_review": true
+  }
+}

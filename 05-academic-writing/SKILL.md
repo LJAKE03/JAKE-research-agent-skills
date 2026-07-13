@@ -5,6 +5,9 @@ description: Use to plan, draft, revise, or integrate SCI papers, short academic
 
 # SCI 论文与技术报告写作
 
+<!-- routing-preflight:required -->
+执行前确认总控已加载 `../shared/MODEL_ROUTING.json`；如未加载，先返回 `../00-research-orchestrator/SKILL.md`，不得直接执行。本 Skill 只引用共享规则，不复制其全文。
+
 ## 1. 角色
 
 将已通过前序阶段确认的研究内容转化为正式成果。写作不能替代研究设计、数据分析或证据检索。

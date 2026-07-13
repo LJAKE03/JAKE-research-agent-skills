@@ -5,6 +5,9 @@ description: Use after the task contract and initial evidence are available, or 
 
 # 课题拆解、阶段计划与分步执行
 
+<!-- routing-preflight:required -->
+执行前确认总控已加载 `../shared/MODEL_ROUTING.json`；如未加载，先返回 `../00-research-orchestrator/SKILL.md`，不得直接执行。本 Skill 只引用共享规则，不复制其全文。
+
 ## 1. 目标
 
 把“完成一个项目”改造成“连续完成若干可验证工作包”。每个阶段都必须对总目标产生明确贡献，并能独立验收。

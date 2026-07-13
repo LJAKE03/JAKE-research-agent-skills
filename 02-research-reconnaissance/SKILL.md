@@ -5,6 +5,9 @@ description: Use whenever a research project needs current or niche information,
 
 # 外部检索、案例学习与证据构建
 
+<!-- routing-preflight:required -->
+执行前确认总控已加载 `../shared/MODEL_ROUTING.json`；如未加载，先返回 `../00-research-orchestrator/SKILL.md`，不得直接执行。本 Skill 只引用共享规则，不复制其全文。
+
 ## 1. 目标
 
 不仅“找资料”，还要回答：

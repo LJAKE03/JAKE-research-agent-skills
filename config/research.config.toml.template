@@ -1,0 +1,12 @@
+# Copy this file to $CODEX_HOME/research.config.toml to use it with:
+#   codex --profile research
+# This repository never overwrites the user's existing Codex configuration.
+
+# Sol, Terra, and Luna were verified locally with codex debug models.
+# This optional CLI compatibility profile deliberately keeps its main thread on
+# Sol; project-level app agents route support and economy work to Terra and Luna.
+model = "gpt-5.6-sol"
+
+# The profile is the balanced interactive default. The skill routes strategic
+# work to high/xhigh and mechanical work to low at task time.
+model_reasoning_effort = "high"

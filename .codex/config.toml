@@ -1,0 +1,6 @@
+# Project-scoped agent limits for the ChatGPT Windows desktop app and Codex.
+# The root task can spawn at most two independent workers; workers cannot
+# recursively fan out because max_depth is one.
+[agents]
+max_threads = 2
+max_depth = 1

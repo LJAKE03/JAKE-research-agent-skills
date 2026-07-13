@@ -1,0 +1,4 @@
+# Managed research-agent concurrency and nesting limits.
+[agents]
+max_threads = 2
+max_depth = 1

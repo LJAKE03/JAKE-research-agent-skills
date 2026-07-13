@@ -5,6 +5,9 @@ description: Mandatory entry and return point for any nontrivial research projec
 
 # 科研项目总控与协同编排
 
+<!-- routing-preflight:required -->
+开始任何科研工作前加载 `../shared/MODEL_ROUTING.json`；据此确定模型层、工具路径、输出与重试边界。
+
 ## 1. 角色
 
 作为项目经理、上下文管理员和用户接口工作。不要代替所有功能 Skill 完成全部内容。
@@ -205,3 +208,29 @@ description: Mandatory entry and return point for any nontrivial research projec
 - 功能 Skill 之间直接无限传递而绕过总控；
 - 质量门发现重大问题后仍继续推进；
 - 为节省步骤而跳过用户关键决策。
+
+## 9. 模型、子代理与工具路由
+
+开始前读取 `../shared/MODEL_ROUTING.md` 和 `../shared/MODEL_ROUTING.json`。实际模型 ID 必须来自当前环境的模型目录；未出现的模型不得写入 agent 配置或当作可用能力。
+
+| 类别 | 路由 | 责任 |
+|---|---|---|
+| A 战略与关键判断 | `strategic`，默认 `high` 或 `xhigh` | 项目启动、路线、创新点、模型/参数/边界、异常诊断、关键数据解释和最终结论由主代理独立负责 |
+| B 科研支持 | `support`，默认 `medium` | 仅处理目录扫描、批量阅读、参数/工况提取、候选整理和边界明确测试；主代理复核 |
+| C 低风险输出 | `economy`，默认 `low` | 仅处理输入完整的格式转换、字段重排、编号和模板填充；主代理抽检 |
+| D 混合任务 | 先 `strategic`，后 B/C，最终 `strategic` | 主代理先定框架、再合并验收 |
+
+`economy` 禁止处理研究方向、项目拆解、技术路线、创新性、数值模型、仿真参数、边界条件、GT-POWER Case、Fluent 发散、实验方案、工程安全、文献可靠性、公式/单位/数值或最终结论。任何不确定内容都标记“待主代理确认”。
+
+只有任务边界明确且能减少主代理负担时才委派；默认并发子代理不超过 2，子代理不得递归创建子代理，主代理必须阅读所有结果、裁决冲突并输出最终用户答复。应用版 Codex 的自定义 agent 以 `.codex/agents/*.toml` 为准；当前已验证 Terra/Luna；自定义 agent 必须使用路由文件中记录的真实模型与 reasoning 配置。
+
+### 工具与输出纪律
+
+按“最少交互、最少输出、最低失败率、最易验证”选择工具：优先 Codex 内置读取/搜索/精确补丁，再使用 `rg`、`git` 和已有验证脚本，最后选择 Python 或 PowerShell。
+
+- Windows 启动器、快捷方式、环境变量、注册表、服务、系统路径及 CMD 兼容性优先 PowerShell；不要为形式统一改写为 Python。
+- CSV/JSON/Excel、科研计算、数值分析、数据清洗、绘图、可复用跨平台批处理和需要单测的逻辑优先 Python。预计重复两次以上的复杂处理应沉淀为可参数化脚本，并提供退出码与 `--quiet`、`--json` 或等效摘要模式。
+- 搜索时限制目录、关键词和文件类型；使用 `rg`/`rg --files`，查看版本改动使用 `git diff`。不得用 Python 重写 Git，也不得用 Python 重写一条原生命令即可可靠完成的操作。
+- 大型结果写入文件，终端只显示状态、路径、数量、摘要和异常；默认关闭详细日志。修改后先跑相关最小测试，最终才跑全量自检。连续两次同类失败后必须改变诊断方法，不得盲目重试。
+
+- Large results must be written to files.

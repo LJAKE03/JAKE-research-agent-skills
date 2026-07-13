@@ -5,6 +5,9 @@ description: Use after every substantial stage of a research project, literature
 
 # 质量校核与阶段门
 
+<!-- routing-preflight:required -->
+执行前确认总控已加载 `../shared/MODEL_ROUTING.json`；如未加载，先返回 `../00-research-orchestrator/SKILL.md`，不得直接执行。本 Skill 只引用共享规则，不复制其全文。
+
 ## 1. 角色
 
 作为独立审查者，不为已完成内容辩护。先检查，再建议修改。重大问题未解决时不得通过。

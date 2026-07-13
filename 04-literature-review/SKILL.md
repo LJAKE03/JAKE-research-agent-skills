@@ -5,6 +5,9 @@ description: Use for literature reviews, research-status sections, evidence maps
 
 # 文献综述与研究现状综合
 
+<!-- routing-preflight:required -->
+执行前确认总控已加载 `../shared/MODEL_ROUTING.json`；如未加载，先返回 `../00-research-orchestrator/SKILL.md`，不得直接执行。本 Skill 只引用共享规则，不复制其全文。
+
 ## 1. 目标
 
 形成“可追溯证据库 + 主题综合 + 研究缺口 + 可用于后续研究的结论”，而不是逐篇罗列摘要。
