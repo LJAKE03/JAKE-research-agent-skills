@@ -1,6 +1,6 @@
 ---
 name: research-project-orchestrator
-description: Mandatory entry and return point for any nontrivial research project, academic task, literature review, SCI paper, technical report, multi-file analysis, or methodology design. Use it whenever a task needs clarification, web research, multiple stages, several skills, user decisions, or quality control. It must inspect context, ask only high-impact questions, decompose work into 3–5 stages, route each stage to the appropriate functional skill, maintain project state, require a stage handoff, invoke the quality gate, and return to the user before proceeding. Never attempt the whole project in one pass.
+description: Mandatory entry and return point for any nontrivial research project, academic task, literature review, SCI paper, technical report, multi-file analysis, or methodology design. Use it whenever a task needs clarification, web research, multiple stages, several skills, user decisions, or quality control. It must inspect context, ask only high-impact questions, dynamically decompose work into an appropriate number of stages based on complexity, risk, deliverables, evidence needs, dependencies, and validation strength, route each stage to the appropriate functional skill, maintain project state, require a stage handoff, invoke the quality gate, and return to the user before proceeding. Never attempt the whole project in one pass.
 ---
 
 # 科研项目总控与协同编排
@@ -17,7 +17,7 @@ description: Mandatory entry and return point for any nontrivial research projec
 - 理解任务和成功标准；
 - 判断哪些信息可以自行检索、哪些必须询问用户；
 - 选择并调用功能 Skill；
-- 将复杂任务拆成 3–5 个可验收阶段；
+- 根据复杂度、风险、交付物、证据需求、依赖关系和验证强度，动态拆成若干可验收阶段；
 - 维护项目状态和决策记录；
 - 回收阶段交接包；
 - 调用质量门进行检查；
@@ -101,10 +101,12 @@ description: Mandatory entry and return point for any nontrivial research projec
 
 调用 `../03-stage-planning-execution/SKILL.md`：
 
-- 将项目拆为 3–5 个阶段；
+- 先评估 complexity、risk、deliverables、evidence、dependencies 和 validation，再动态确定阶段数量；
 - 为每阶段指定功能 Skill、输入、输出、验收标准和依赖；
 - 一次只激活一个工作包；
 - 给出用户检查节点。
+
+阶段数量不设固定上下限。简单任务可以少于 3 个阶段，常规复杂任务通常可采用 3–5 个阶段，高复杂度、高风险或多交付物任务可以超过 5 个阶段。不得为了满足阶段数量而人为拆分或合并任务。每个阶段必须具有明确的目标、输入、方法、输出、停止条件和质量门。执行过程中如出现新的证据、风险或范围变化，可以重新拆分、合并、增加或取消阶段，并同步更新项目状态文件。阶段数量属于规划结果，不属于预先固定的治理规则。
 
 ### Step 4：执行当前阶段
 
@@ -150,10 +152,12 @@ description: Mandatory entry and return point for any nontrivial research projec
 默认采用标准模式：
 
 - 首轮高价值问题：3–7 个；
-- 项目阶段：3–5 个；
+- 项目阶段数量根据 complexity、risk、deliverables、evidence、dependencies 和 validation 动态确定；
 - 单阶段：只解决一个核心问题；
 - 单阶段输出：一个主交付物 + 必要附件；
 - 未通过质量门，不进入下一阶段。
+
+阶段数量可少于 3 个、通常为 3–5 个，也可以超过 5 个；不得为了形式要求而人为增加或合并阶段。若阶段发生拆分、合并、增加或取消，必须记录变更原因并更新项目状态。
 
 若任务过大，将其拆成“本轮可完成范围”和“后续待办”，不要用大篇幅低质量内容假装完成。
 

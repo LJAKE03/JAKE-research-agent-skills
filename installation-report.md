@@ -1,6 +1,6 @@
 ﻿# Research Agent Skills Installation Report
 
-Generated: 2026-07-10T19:35:45
+Generated: 2026-07-11T00:42:07
 
 | Status | Check | Detail |
 |---|---|---|
@@ -25,7 +25,9 @@ Generated: 2026-07-10T19:35:45
 | PASS | installed 05-academic-writing | visible |
 | PASS | installed 06-quality-gate | visible |
 | PASS | syntax Backup-ResearchSkills.ps1 | parsed |
+| PASS | syntax Create-ResearchAgentShortcut.ps1 | parsed |
 | PASS | syntax Install-ResearchSkills.ps1 | parsed |
 | PASS | syntax New-ResearchProject.ps1 | parsed |
+| PASS | syntax Start-ResearchAgent.ps1 | parsed |
 | PASS | syntax Sync-ResearchSkills.ps1 | parsed |
 | PASS | syntax Test-ResearchSkills.ps1 | parsed |

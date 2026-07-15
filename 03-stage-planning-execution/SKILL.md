@@ -1,6 +1,6 @@
 ---
 name: staged-research-planning-and-execution
-description: Use after the task contract and initial evidence are available, or whenever a research project is too large to complete safely in one response. It decomposes the work into 3–5 dependent, testable stages; creates one task card at a time; defines inputs, outputs, acceptance criteria, risks, user checkpoints, and the next skill; controls scope and token use; executes only the active work package; and returns a stage handoff to the orchestrator instead of continuing automatically.
+description: Use after the task contract and initial evidence are available, or whenever a research project is too large to complete safely in one response. It dynamically decomposes the work into an appropriate number of dependent, testable stages; creates one task card at a time; defines inputs, outputs, acceptance criteria, risks, user checkpoints, and the next skill; controls scope and token use; executes only the active work package; and returns a stage handoff to the orchestrator instead of continuing automatically.
 ---
 
 # 课题拆解、阶段计划与分步执行
@@ -25,7 +25,11 @@ description: Use after the task contract and initial evidence are available, or 
 - 失败时不会推翻全部项目；
 - 输出可直接交给下一阶段使用。
 
-## 3. 默认拆成 3–5 个阶段
+## 3. 动态确定阶段数量
+
+阶段数量不设固定上下限。总控应根据任务复杂度、技术和安全风险、交付物数量及类型、证据和外部核验需求、子任务依赖关系、实验/仿真/代码/文献/多轮验证需求、用户检查点和质量门数量，以及项目恢复与交接需求，动态确定阶段数量。简单任务可以少于 3 个阶段，常规复杂任务通常可采用 3–5 个阶段，高复杂度、高风险或多交付物任务可以超过 5 个阶段。不得为了满足阶段数量而人为拆分或合并任务；阶段数量属于规划结果，不属于预先固定的治理规则。
+
+执行过程中如出现新的证据、风险或范围变化，可以重新拆分、合并、增加或取消阶段，并同步更新项目状态文件。
 
 常见科研项目结构：
 
@@ -50,6 +54,27 @@ description: Use after the task contract and initial evidence are available, or 
 
 若前置条件不满足，返回总控补充，不要强行执行。
 
+### 规划示例
+
+- 简单文件格式修复：可规划为 1–2 个阶段；
+- 常规文献调查：通常可采用 3–5 个阶段；
+- 多物理场建模、实验和论文交付项目：可以规划为 6 个或更多阶段。
+
+这些是可行示例而非固定模板，最终数量仍由前述评估结果决定。
+
+### 阶段数评估
+
+总控在确定阶段数前至少评估：
+
+- `complexity`：任务复杂度；
+- `risk`：技术、安全和合规风险；
+- `deliverables`：交付物数量及类型；
+- `evidence`：证据、外部检索和核验需求；
+- `dependencies`：子任务依赖关系；
+- `validation`：实验、仿真、代码、文献或多轮验证强度。
+
+项目计划或 `PROJECT_STATE.md` 必须记录当前规划的阶段数量、确定依据、是否允许后续调整，以及阶段拆分/合并/增加/取消的变更原因。
+
 ## 5. 阶段计划表
 
 ```markdown
@@ -57,7 +82,7 @@ description: Use after the task contract and initial evidence are available, or 
 |---|---|---|---|---|---|---|---|
 ```
 
-每个工作包还需标记：依赖、风险、允许假设、停止条件、对总目标的贡献。
+每个工作包还需标记：依赖、风险、允许假设、停止条件、对总目标的贡献。每个阶段至少记录阶段编号和名称、目标、输入、方法、输出、停止条件、质量门，以及与前后阶段的依赖关系。
 
 ## 6. 单阶段任务卡
 

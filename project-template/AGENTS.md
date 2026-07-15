@@ -10,12 +10,11 @@
 
 1. 开始前读取 `PROJECT_STATE.md` 和 `PROJECT_OVERRIDES.md`。
 2. 不重复询问已确认信息；可自行检索的事实先自行核实。
-3. 大型任务拆成 3–5 个阶段，一次只执行一个工作包。
+3. 大型任务根据 complexity、risk、deliverables、evidence、dependencies 和 validation 动态确定阶段数量，一次只执行一个工作包；阶段数量不设固定上下限，简单任务可少于 3 个阶段，常规复杂任务通常可采用 3–5 个阶段，高复杂度任务可超过 5 个阶段。
 4. 每阶段完成后进入质量门，并更新 `PROJECT_STATE.md`。
 5. Skill 使用问题写入 `SKILL_FEEDBACK.md`；项目特有规则写入 `PROJECT_OVERRIDES.md`。
 6. 未经用户确认，不修改公共稳定 Skill。
 7. 不得虚构文献、数据、实验、结果或已完成状态。
-
 <!-- research-agent-routing:start -->
 ## 科研 Agent 托管路由
 
