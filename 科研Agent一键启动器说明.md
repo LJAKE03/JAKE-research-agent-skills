@@ -1,4 +1,4 @@
-﻿# 科研 Agent 一键启动器
+# 科研 Agent 一键启动器
 
 ## 日常使用
 
@@ -7,7 +7,7 @@
 1. 新建科研项目：输入名称、选择保存目录。启动器调用 scripts\New-ResearchProject.ps1，不会覆盖同名项目。
 2. 打开已有科研项目：选择项目根目录。若模板文件不完整，启动器会先列出准备新增的文件；确认后只原子创建缺失文件。
 3. 打开最近一次项目：打开最近一个仍存在且包含 AGENTS.md、PROJECT_STATE.md 的有效项目。
-4. 仅检查科研 Skills：运行 scripts\Test-ResearchSkills.ps1 并明确显示 PASS、WARNING 或 FAIL。
+4. 仅检查科研 Skills：严格运行 scripts\Test-ResearchSkills.ps1，并明确显示 PASS 或 FAIL；模型目录不可验证或 Sol 不可用时默认失败，只有 Terra/Luna 缺失时提示 Sol-only 降级。离线静态检查需显式添加 -AllowUnverifiedModelCatalog。
 5. 退出。
 
 选择项目后，可填写本次科研任务，也可留空后在 Codex Desktop 中输入。启动器会打开 Codex Desktop 图形界面，并把项目路径和首条 Prompt 自动复制到剪贴板。请在 Desktop 中打开提示的项目目录作为工作区，新建任务后按 Ctrl+V 粘贴；Prompt 会调用 $research-project-orchestrator 并按项目状态、阶段和质量门恢复工作。

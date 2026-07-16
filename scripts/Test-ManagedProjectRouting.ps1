@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   End-to-end tests for managed routing propagation to new and existing projects.
 #>
@@ -12,6 +12,16 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 if ([string]::IsNullOrWhiteSpace($SourceRoot)) { $SourceRoot = Split-Path -Parent $PSScriptRoot }
 $SourceRoot = (Resolve-Path -LiteralPath $SourceRoot).ProviderPath
+$canonicalPath = Join-Path $SourceRoot 'shared\MODEL_ROUTING.json'
+$canonicalText = [IO.File]::ReadAllText($canonicalPath)
+$canonicalHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $canonicalPath).Hash
+$canonical = $canonicalText | ConvertFrom-Json
+$expectedSupportModel = [regex]::Escape([string]$canonical.tiers.support.model)
+$expectedSupportEffort = [regex]::Escape([string]$canonical.tiers.support.reasoning_effort)
+$expectedEconomyModel = [regex]::Escape([string]$canonical.tiers.economy.model)
+$expectedEconomyEffort = [regex]::Escape([string]$canonical.tiers.economy.reasoning_effort)
+$expectedMaxThreads = [int]$canonical.delegation.max_threads
+$expectedMaxDepth = [int]$canonical.delegation.max_depth
 $initializer = Join-Path $SourceRoot 'scripts\Initialize-ResearchProjectRouting.ps1'
 $launcher = Join-Path $SourceRoot 'scripts\Start-ResearchAgent.ps1'
 $creator = Join-Path $SourceRoot 'scripts\New-ResearchProject.ps1'
@@ -63,17 +73,22 @@ try {
   )) { Assert-Test (Test-Path -LiteralPath (Join-Path $newProject $relative) -PathType Leaf) "new project contains $relative" }
 
   $config = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $newProject '.codex\config.toml')
-  Assert-Test ($config -match '(?m)^max_threads\s*=\s*2\s*$') 'new project max_threads=2'
-  Assert-Test ($config -match '(?m)^max_depth\s*=\s*1\s*$') 'new project max_depth=1'
+  Assert-Test ($config -match ("(?m)^max_threads\s*=\s*{0}\s*$" -f $expectedMaxThreads)) "new project max_threads=$expectedMaxThreads"
+  Assert-Test ($config -match ("(?m)^max_depth\s*=\s*{0}\s*$" -f $expectedMaxDepth)) "new project max_depth=$expectedMaxDepth"
   $support = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $newProject '.codex\agents\research-support.toml')
   $output = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $newProject '.codex\agents\research-output.toml')
-  Assert-Test ($support -match '(?m)^model\s*=\s*"gpt-5\.6-terra"\s*$' -and $support -match '(?m)^model_reasoning_effort\s*=\s*"medium"\s*$') 'support uses Terra medium'
-  Assert-Test ($output -match '(?m)^model\s*=\s*"gpt-5\.6-luna"\s*$' -and $output -match '(?m)^model_reasoning_effort\s*=\s*"low"\s*$') 'economy uses Luna low'
+  Assert-Test ($support -match ("(?m)^model\s*=\s*`"{0}`"\s*$" -f $expectedSupportModel) -and $support -match ("(?m)^model_reasoning_effort\s*=\s*`"{0}`"\s*$" -f $expectedSupportEffort)) 'support matches canonical routing'
+  Assert-Test ($output -match ("(?m)^model\s*=\s*`"{0}`"\s*$" -f $expectedEconomyModel) -and $output -match ("(?m)^model_reasoning_effort\s*=\s*`"{0}`"\s*$" -f $expectedEconomyEffort)) 'economy matches canonical routing'
   Assert-Test ($support -match '(?m)^sandbox_mode\s*=\s*"read-only"\s*$' -and $output -match '(?m)^sandbox_mode\s*=\s*"read-only"\s*$') 'both agents are read-only'
-  $routing = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $newProject '.research-agent\MODEL_ROUTING.json') | ConvertFrom-Json
+  $routingPath = Join-Path $newProject '.research-agent\MODEL_ROUTING.json'
+  $routing = Get-Content -Raw -Encoding UTF8 -LiteralPath $routingPath | ConvertFrom-Json
   Assert-Test (-not [bool]$routing.delegation.subagents_may_delegate -and [bool]$routing.delegation.main_agent_final_review) 'delegation and final-review boundaries'
+  Assert-Test ((Get-FileHash -Algorithm SHA256 -LiteralPath $routingPath).Hash -eq $canonicalHash) 'project routing snapshot is byte-identical to canonical JSON'
+  $routingStatus = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $newProject '.research-agent\routing-version.json') | ConvertFrom-Json
+  Assert-Test ([string]$routingStatus.status -eq 'ready' -and [int]$routingStatus.conflict_count -eq 0) 'new project routing status is ready'
+  Assert-Test ([string]$routingStatus.canonical_sha256 -eq $canonicalHash -and [string]$routingStatus.snapshot_sha256 -eq $canonicalHash) 'new project canonical and snapshot hashes recorded'
   $agents = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $newProject 'AGENTS.md')
-  foreach($token in @('Codex','PowerShell','Python','`rg`','`git diff`','max_threads=2','max_depth=1','research-agent-routing:start','research-agent-routing:end')) {
+  foreach($token in @('Codex','PowerShell','Python','`rg`','`git diff`',"max_threads=$expectedMaxThreads","max_depth=$expectedMaxDepth",'research-agent-routing:start','research-agent-routing:end')) {
     Assert-Test ($agents.Contains($token)) "AGENTS contains $token"
   }
 
@@ -117,19 +132,92 @@ try {
   $configHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $conflictProject '.codex\config.toml')).Hash
   $agentHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $conflictProject '.codex\agents\research-support.toml')).Hash
   $conflictOutput = @(& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $launcher -RepositoryRoot $SourceRoot -NoGui -RoutingPreflightOnly -RoutingProjectDirectory $conflictProject 2>&1) -join "`n"
-  Assert-Test ($LASTEXITCODE -eq 0) 'launcher conflict preflight exits zero'
-  Assert-Test ($conflictOutput -match 'WARNING') 'conflict emits WARNING'
+  Assert-Test ($LASTEXITCODE -ne 0) 'launcher conflict preflight exits nonzero'
+  Assert-Test ($conflictOutput -match 'ROUTING_BLOCKED_CONFLICT') 'conflict emits blocked status'
+  Assert-Test ($conflictOutput -notmatch 'ROUTING_PROJECT_READY') 'conflict never emits ready'
   Assert-Test ((Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $conflictProject '.codex\config.toml')).Hash -eq $configHash) 'conflicting config is not overwritten'
   Assert-Test ((Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $conflictProject '.codex\agents\research-support.toml')).Hash -eq $agentHash) 'conflicting agent is not overwritten'
   Assert-Test (Test-Path -LiteralPath (Join-Path $conflictProject '.research-agent\routing-conflicts.md') -PathType Leaf) 'conflict report created'
+  $blockedStatus = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $conflictProject '.research-agent\routing-version.json') | ConvertFrom-Json
+  Assert-Test ([string]$blockedStatus.status -eq 'blocked_conflict' -and [int]$blockedStatus.conflict_count -gt 0) 'conflict status file is fail-closed'
   Assert-Test (@(Get-ChildItem -LiteralPath (Join-Path $conflictProject '.research-agent\candidates') -File).Count -ge 2) 'conflict candidates created'
 
-  $installedShared = Join-Path $UserSkillsRoot 'shared'
-  $installedItem = Get-Item -LiteralPath $installedShared -Force
-  Assert-Test ($installedItem.LinkType -eq 'Junction') 'installed shared is a Junction'
-  Assert-Test (Test-Path -LiteralPath (Join-Path $installedShared 'MODEL_ROUTING.json') -PathType Leaf) 'Junction exposes MODEL_ROUTING.json'
-  Assert-Test (Test-Path -LiteralPath (Join-Path $installedShared 'MODEL_ROUTING.md') -PathType Leaf) 'Junction exposes MODEL_ROUTING.md'
+  function Assert-SharedArtifactsMatchSource {
+    param([string]$InstalledShared,[string]$Label,[switch]$VerifyContent)
+    $sourceShared = Join-Path $SourceRoot 'shared'
+    Assert-Test (Test-Path -LiteralPath $InstalledShared -PathType Container) "$Label shared directory exists"
+    $sourceFiles = if($VerifyContent) {
+      @(Get-ChildItem -LiteralPath $sourceShared -File | Sort-Object Name)
+    } else {
+      @('MODEL_ROUTING.json','MODEL_ROUTING.md') | ForEach-Object { Get-Item -LiteralPath (Join-Path $sourceShared $_) }
+    }
+    $sourceFiles = @($sourceFiles)
+    Assert-Test ($sourceFiles.Count -gt 0) 'source shared artifacts found'
+    foreach($sourceFile in $sourceFiles) {
+      $installedFile = Join-Path $InstalledShared $sourceFile.Name
+      Assert-Test (Test-Path -LiteralPath $installedFile -PathType Leaf) "$Label contains shared\$($sourceFile.Name)"
+      if($VerifyContent) {
+        $sourceHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $sourceFile.FullName).Hash
+        $installedHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $installedFile).Hash
+        Assert-Test ($installedHash -eq $sourceHash) "$Label shared\$($sourceFile.Name) matches source"
+      }
+    }
+  }
 
+  function Invoke-CatalogScenario {
+    param([string]$Name,[string]$CatalogJson)
+    $scenarioRoot = Join-Path $testRoot $Name
+    $fakeBin = Join-Path $scenarioRoot 'bin'
+    $scenarioProject = Join-Path $scenarioRoot 'project'
+    New-Item -ItemType Directory -Path $fakeBin,$scenarioProject -Force | Out-Null
+    Write-TestText (Join-Path $scenarioProject 'AGENTS.md') '# routing scenario'
+    Write-TestText (Join-Path $scenarioProject 'PROJECT_STATE.md') 'status: test'
+    $cmd = "@echo off`r`necho $CatalogJson`r`nexit /b 0`r`n"
+    [IO.File]::WriteAllText((Join-Path $fakeBin 'codex.cmd'),$cmd,(New-Object Text.ASCIIEncoding))
+    $savedPath = $env:PATH
+    try {
+      $env:PATH = $fakeBin
+      $scenarioOutput = @(& $powershellPath -NoProfile -ExecutionPolicy Bypass -File $launcher -RepositoryRoot $SourceRoot -NoGui -RoutingPreflightOnly -RoutingProjectDirectory $scenarioProject 2>&1) -join "`n"
+      $scenarioExit = $LASTEXITCODE
+    } finally { $env:PATH = $savedPath }
+    $scenarioStatus = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $scenarioProject '.research-agent\routing-version.json') | ConvertFrom-Json
+    return [pscustomobject]@{ ExitCode=$scenarioExit; Output=$scenarioOutput; Status=$scenarioStatus }
+  }
+
+  $powershellPath = (Get-Command powershell.exe -ErrorAction Stop).Source
+  $solOnlyJson = '{"models":[{"slug":"gpt-5.6-sol","supported_reasoning_levels":[{"effort":"xhigh"}]}]}'
+  $solOnly = Invoke-CatalogScenario -Name 'sol-only scenario' -CatalogJson $solOnlyJson
+  Assert-Test ($solOnly.ExitCode -eq 0) 'Sol-only scenario exits zero'
+  Assert-Test ([string]$solOnly.Status.status -eq 'degraded_sol_only') 'Sol-only scenario records degraded status'
+  Assert-Test ((@($solOnly.Status.unavailable_tiers) -join ',') -eq 'support,economy') 'Sol-only scenario records unavailable tiers'
+  Assert-Test ($solOnly.Output -match 'Routing degraded to Sol-only' -and $solOnly.Output -match 'ROUTING_PROJECT_READY') 'Sol-only scenario warns and remains launchable'
+
+  $noSolJson = '{"models":[{"slug":"gpt-5.6-terra","supported_reasoning_levels":[{"effort":"medium"}]},{"slug":"gpt-5.6-luna","supported_reasoning_levels":[{"effort":"low"}]}]}'
+  $noSol = Invoke-CatalogScenario -Name 'no-sol scenario' -CatalogJson $noSolJson
+  Assert-Test ($noSol.ExitCode -ne 0) 'missing strategic Sol exits nonzero'
+  Assert-Test ([string]$noSol.Status.status -eq 'blocked_model_catalog' -and 'strategic' -in @($noSol.Status.unavailable_tiers)) 'missing strategic Sol records blocked status'
+  Assert-Test ($noSol.Output -match 'ROUTING_BLOCKED_MODEL_CATALOG' -and $noSol.Output -notmatch 'ROUTING_PROJECT_READY') 'missing strategic Sol never emits ready'
+  $installedShared = Join-Path $UserSkillsRoot 'shared'
+  Assert-Test (Test-Path -LiteralPath $installedShared -PathType Container) 'installed shared directory exists'
+  $installedItem = Get-Item -LiteralPath $installedShared -Force
+  $linkTypeProperty = $installedItem.PSObject.Properties['LinkType']
+  $installedLinkType = if ($null -eq $linkTypeProperty) { '' } else { [string]$linkTypeProperty.Value }
+  $isJunction = $installedLinkType -eq 'Junction'
+  $isCopyMode = [string]::IsNullOrWhiteSpace($installedLinkType)
+  Assert-Test ($isJunction -or $isCopyMode) 'installed shared uses Junction or copy-mode'
+  Assert-SharedArtifactsMatchSource -InstalledShared $installedShared -Label 'installed' -VerifyContent:$isCopyMode
+
+  $copyModeRoot = Join-Path $testRoot 'copy-mode installation'
+  $copyModeShared = Join-Path $copyModeRoot 'shared'
+  New-Item -ItemType Directory -Path $copyModeShared -Force | Out-Null
+  foreach($sourceFile in @(Get-ChildItem -LiteralPath (Join-Path $SourceRoot 'shared') -File)) {
+    Copy-Item -LiteralPath $sourceFile.FullName -Destination (Join-Path $copyModeShared $sourceFile.Name)
+  }
+  $copyModeItem = Get-Item -LiteralPath $copyModeShared -Force
+  $copyLinkProperty = $copyModeItem.PSObject.Properties['LinkType']
+  $copyLinkType = if ($null -eq $copyLinkProperty) { '' } else { [string]$copyLinkProperty.Value }
+  Assert-Test ([string]::IsNullOrWhiteSpace($copyLinkType)) 'copy-mode simulation uses an ordinary directory'
+  Assert-SharedArtifactsMatchSource -InstalledShared $copyModeShared -Label 'copy-mode simulation' -VerifyContent
   Write-Output 'MANAGED_PROJECT_ROUTING_PASS'
 }
 catch { $failure = $_ }

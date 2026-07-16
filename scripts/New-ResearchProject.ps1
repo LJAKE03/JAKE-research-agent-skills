@@ -46,7 +46,7 @@ if ($PSCmdlet.ShouldProcess($target, '创建科研项目')) {
             $text = Get-Content -Encoding UTF8 -Raw -LiteralPath $_.FullName
             if ($null -ne $text) {
                 $updated = $text.Replace('【项目名称】', $name).Replace('研究项目名称', $name)
-                [IO.File]::WriteAllText($_.FullName, $updated, (New-Object Text.UTF8Encoding($true)))
+                if ($updated -cne $text) { [IO.File]::WriteAllText($_.FullName, $updated, (New-Object Text.UTF8Encoding($false))) }
             }
         }
 
@@ -80,7 +80,20 @@ if ($PSCmdlet.ShouldProcess($target, '创建科研项目')) {
             throw "新项目缺少托管路由文件：$relativePath"
         }
     }
-
-    Write-Output "项目已创建：$target"
+    $routingStatus = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $target '.research-agent\routing-version.json') | ConvertFrom-Json
+    $canonicalPath = Join-Path $repositoryRoot 'shared\MODEL_ROUTING.json'
+    $snapshotPath = Join-Path $target '.research-agent\MODEL_ROUTING.json'
+    $canonicalHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $canonicalPath).Hash
+    $snapshotHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $snapshotPath).Hash
+    if ($snapshotHash -ne $canonicalHash -or [string]$routingStatus.canonical_sha256 -ne $canonicalHash) {
+        throw 'New project routing snapshot does not match canonical bytes.'
+    }
+    if ([int]$routingStatus.conflict_count -ne 0 -or [string]$routingStatus.status -notin @('ready','degraded_sol_only')) {
+        throw "New project routing is not usable: status=$($routingStatus.status) conflicts=$($routingStatus.conflict_count)"
+    }
+    if ([string]$routingStatus.status -eq 'degraded_sol_only') {
+        if ([string]$routingStatus.catalog.status -ne 'verified' -or -not [bool]$routingStatus.catalog.routing_models.strategic -or 'strategic' -in @($routingStatus.unavailable_tiers)) { throw 'New project has invalid Sol-only status.' }
+        Write-Warning "New project uses Sol-only routing; unavailable tiers: $(@($routingStatus.unavailable_tiers) -join ',')"
+    }
     Write-Output ('启动：阅读 ' + $target + '\RESEARCH_PROJECT_START_PROMPT.md 并调用 $research-project-orchestrator')
 }

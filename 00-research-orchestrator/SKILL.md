@@ -1,6 +1,6 @@
 ---
 name: research-project-orchestrator
-description: Mandatory entry and return point for any nontrivial research project, academic task, literature review, SCI paper, technical report, multi-file analysis, or methodology design. Use it whenever a task needs clarification, web research, multiple stages, several skills, user decisions, or quality control. It must inspect context, ask only high-impact questions, dynamically decompose work into an appropriate number of stages based on complexity, risk, deliverables, evidence needs, dependencies, and validation strength, route each stage to the appropriate functional skill, maintain project state, require a stage handoff, invoke the quality gate, and return to the user before proceeding. Never attempt the whole project in one pass.
+description: Mandatory entry and return point for any nontrivial research project, academic task, literature review, SCI paper, technical report, multi-file analysis, or methodology design. Use it whenever a task needs clarification, web research, multiple stages, several skills, user decisions, or quality control. It must inspect context, ask only high-impact questions, dynamically decompose work based on complexity, risk, deliverables, evidence, dependencies, and validation, route each stage, maintain state when needed, invoke the quality gate, and return to the user at high-impact checkpoints. Never attempt the whole project in one pass.
 ---
 
 # 科研项目总控与协同编排
@@ -118,13 +118,14 @@ description: Mandatory entry and return point for any nontrivial research projec
 
 ### Step 5：回收与质量门
 
-- 要求执行 Skill 返回标准阶段交接包。
-- 调用 `../06-quality-gate/SKILL.md`。
+- 要求执行 Skill 返回紧凑阶段交接包，只保留结论、证据定位、不确定项、改动文件和下一动作。
+- 按风险调用 `../06-quality-gate/SKILL.md`：L0 做工具/结构检查；L1/Terra 只做来源定位、字段与覆盖率机械核验；L2/Sol 裁决来源真实性、权威性、可靠性、新颖性及科学结论。
+- 只执行当前任务需要的最高层；L1/L2 继承更低层结果，不重复加载原始材料。
 - 输出质量门结论：通过、带条件通过、返工、阻断。
 
 ### Step 6：用户检查
 
-以下节点原则上必须让用户确认：
+以下高影响节点原则上必须让用户确认：
 
 - 研究范围与任务合同；
 - 总体技术路线；
@@ -133,11 +134,11 @@ description: Mandatory entry and return point for any nontrivial research projec
 - 关键阶段结果；
 - 最终成果。
 
-低风险文字润色或格式调整可自动继续，但必须在交接包中记录。
+低风险、可逆工作包通过所需质量门后可连续执行，直到高影响决策、证据不足或不可逆操作前再请求确认。
 
 ### Step 7：更新状态
 
-按 `../shared/PROJECT_STATE.template.md` 更新：
+仅在阶段切换或高影响状态变化时，按 `../shared/PROJECT_STATE.template.md` 完整更新：
 
 - 已完成；
 - 新决策；
@@ -147,17 +148,20 @@ description: Mandatory entry and return point for any nontrivial research projec
 - 待用户确认；
 - 下一阶段。
 
-## 6. 工作量控制
+简单任务快车道不要求创建阶段卡或完整 `PROJECT_STATE`，只保留紧凑结果、验证结论和必要假设。
 
-默认采用标准模式：
+## 6. 工作量与 Token 控制
 
-- 首轮高价值问题：3–7 个；
+默认采用平衡快速模式：
+
+- 先判断任务风险；首轮只问 0–2 个真正阻断执行的问题，其余公开信息自行检索、低影响事项明确假设后继续；
+- 简单、低风险任务走快车道，不创建多余阶段、完整项目状态或重复质量报告；
+- 低风险工作包可连续执行，到首次高影响决策、证据不足或不可逆操作前再请用户确认；
+- 投稿、申报、科学最终结论、安全或高成本决策自动切换严格模式；
 - 项目阶段数量根据 complexity、risk、deliverables、evidence、dependencies 和 validation 动态确定；
-- 单阶段：只解决一个核心问题；
-- 单阶段输出：一个主交付物 + 必要附件；
-- 未通过质量门，不进入下一阶段。
+- 单阶段只解决一个核心问题，输出一个主交付物和必要附件；未通过所需层级质量门，不进入下一阶段。
 
-阶段数量可少于 3 个、通常为 3–5 个，也可以超过 5 个；不得为了形式要求而人为增加或合并阶段。若阶段发生拆分、合并、增加或取消，必须记录变更原因并更新项目状态。
+阶段数量可少于 3 个、通常为 3–5 个，也可以超过 5 个；不得为了形式要求而人为增加或合并阶段。只有阶段边界或高影响决策变化时才更新完整项目状态，常规进度使用紧凑交接包。
 
 若任务过大，将其拆成“本轮可完成范围”和“后续待办”，不要用大篇幅低质量内容假装完成。
 
@@ -195,11 +199,9 @@ description: Mandatory entry and return point for any nontrivial research projec
 - 未解决问题：
 - 对总体目标的贡献：
 
-## 请用户决定
-- 通过并进入下一阶段
-- 按问题清单修改
-- 调整研究方向
-- 暂停
+## 下一动作
+- 低风险且无高影响检查点：记录后自动继续
+- 高影响检查点：请求用户决定通过、修改、调整方向或暂停
 ```
 
 ## 8. 禁止行为

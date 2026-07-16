@@ -1,4 +1,4 @@
-# 科研 Agent Skills 协同套件 v2.0
+# 科研 Agent Skills 协同套件 v2.1
 
 本套件不是若干彼此独立的提示词，而是一套由**总控 Skill 统一编排、功能 Skill 分阶段执行、质量门 Skill 回收验收**的科研工作系统。
 
@@ -18,7 +18,9 @@ flowchart TD
     O --> W[05 SCI论文与技术报告写作]
     W --> O
     O --> Q[06 质量校核与阶段门]
-    Q --> D{用户检查/决策}
+    Q --> H{高影响检查点?}
+    H -->|否，连续执行| O
+    H -->|是| D{用户检查/决策}
     D -->|通过| O
     D -->|修改| O
     D -->|暂停或改向| O
@@ -46,13 +48,13 @@ flowchart TD
 
 可直接输入：
 
-> 调用科研项目总控 Skill。我要完成【任务】。先不要直接生成最终成果，请先检查已有信息、主动检索能够自行查明的内容，再向我询问真正影响方案质量的关键信息；随后根据任务复杂度、风险、交付物和验证需求动态拆分阶段，经我确认后逐步执行。每阶段完成后进行质量校核并让我确认，再进入下一阶段。
+> 调用科研项目总控 Skill。我要完成【任务】。先检查已有信息、主动检索能够自行查明的内容，只询问真正阻断执行的关键信息；随后按复杂度、风险、交付物和验证需求动态拆分并执行。低风险、可逆工作通过所需质量门后连续推进，直到高影响决策、证据不足或不可逆操作前再让我确认。
 
 ### 2. 默认运行模式
 
-- **标准模式（默认）**：3–7 个高价值问题；阶段数量根据复杂度、风险和交付物动态确定；关键节点由用户确认。简单任务可少于 3 个阶段，常规复杂任务通常可采用 3–5 个阶段，高复杂度任务可超过 5 个阶段。
-- **快速模式**：只问阻断性问题；阶段数量按任务风险动态确定；适合低风险、短任务。
-- **严格模式**：建立完整检索记录、证据矩阵和质量评分；每个阶段均需用户确认，适合 SCI 论文、项目申报、正式报告。
+- **平衡快速模式（默认）**：先判断风险，首轮只问 0–2 个阻断问题；低风险工作包可连续执行，到高影响决策、证据不足或不可逆操作前再请用户确认。
+- **简单任务快车道**：单一、低风险、无需外部证据的任务直接完成，不创建多余阶段或完整项目状态。
+- **严格模式**：建立完整检索记录、证据矩阵和 L2 科学质量门；适用于 SCI 投稿、项目申报、安全、高成本决策和最终科研结论。
 
 ### 3. 中断后恢复
 
@@ -95,15 +97,26 @@ research-agent-skills/
 
 ## 六、版本说明
 
-v2.0 相比上一版的核心变化：
+v2.0 建立了“1 个总控 + 6 个功能 Skill”、阶段交接、项目状态和质量门架构；v2.1 重点更新：
 
-- 从单一大 Skill 改为“1 个总控 + 6 个功能 Skill”。
-- 明确总控为唯一用户接口和最终决策者。
-- 增加强制联网学习和相似项目迁移机制。
-- 增加阶段交接包与项目状态文件。
-- 增加用户参与的阶段门，不允许大任务一次性生成到底。
-- 增加 Skill 测试案例，便于后续迭代。
-
+- 路由冲突和 Sol/模型目录不可验证均 fail-closed；仅 `ready`，或 Sol 已验证且明确为 `degraded_sol_only`，并且无冲突、快照哈希一致时才能启动。
+- `shared/MODEL_ROUTING.json` 成为唯一配置源；项目模板仅保留字节一致的生成快照。
+- 默认采用平衡快速模式和 L0/L1/L2 分层质量门，减少低风险任务的重复上下文。
+- 修复复制模式同步和 ZIP 备份的通配符问题，并增加实际文件内容、降级和阻断回归测试。
 ## 应用版模型与工具路由
 
-Windows 版 ChatGPT 桌面应用是本项目的主要入口。项目用 `.codex/config.toml` 限制子代理并发/深度，并用 `.codex/agents/research-support.toml` 与 `.codex/agents/research-output.toml` 定义支持和低风险输出代理。实际模型映射、回退条件、工具边界和自检命令见 `shared/MODEL_ROUTING.md`；现有 CMD/PowerShell 启动器保留，但不承担应用版模型路由。
+Windows 版 ChatGPT 桌面应用是本项目的主要入口。项目用 `.codex/config.toml` 限制子代理并发/深度，并用 `.codex/agents/research-support.toml` 与 `.codex/agents/research-output.toml` 定义支持和低风险输出代理。`shared/MODEL_ROUTING.json` 是唯一 canonical 配置源，项目模板快照必须与它字节一致；实际模型映射、回退条件、工具边界和自检命令见 `shared/MODEL_ROUTING.md`。CMD/PowerShell 启动器负责 canonical、快照哈希和本地模型目录预检；实际任务分派仍由应用版项目级路由执行。
+
+## 验证与 Token 控制
+
+日常静态检查不调用 Agent，因此不产生模型 Token：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-ResearchSkills.ps1 -AllowUnverifiedModelCatalog
+```
+
+发布前严格检查省略离线开关；此时无法读取 `codex debug models`，或缺少 Python `jsonschema` 而无法执行 Draft 2020-12 Schema 验证，都会直接失败，避免假绿。真实 strategic/support/economy/mixed 性能评测应单独按需运行并记录路由、模型、首响、总耗时、输入/输出 Token 和质量评分；在获得基线数据前，不宣称具体节省比例。
+
+## 关于 GitHub 的“主要语言”
+
+[GitHub Linguist](https://docs.github.com/zh/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-repository-languages) 通常不把 Markdown 文档当作可统计的编程语言，因此仓库会显示 PowerShell 为主要语言。这是合理结果：Skills 的业务逻辑主要写在 Markdown/JSON 中，PowerShell 是 Windows 安装、启动、同步和回归测试层。项目不通过 `.gitattributes` 人为改写语言占比，避免误导。

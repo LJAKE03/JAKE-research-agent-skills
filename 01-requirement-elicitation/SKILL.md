@@ -40,7 +40,7 @@ description: Use when a research task, project, paper, review, report, experimen
 
 ## 4. 提问规则
 
-- 默认一次提出 3–7 个问题。
+- 首轮只提出 0–2 个真正阻断执行的问题；其余问题在相关高影响检查点按需提出。
 - 将问题按“目标—对象—数据—方法—交付”排序。
 - 尽量给出选项、推荐默认值和影响说明。
 - 不重复询问已经回答的问题。
@@ -77,7 +77,7 @@ description: Use when a research task, project, paper, review, report, experimen
 ### 决策偏好
 
 - 更强调创新性、工程可实施性、完成速度还是证据严谨性？
-- 用户希望每阶段确认，还是只确认关键节点？
+- 哪些高影响决策或不可逆操作必须由用户确认？
 
 ## 6. 输出：研究任务合同
 
