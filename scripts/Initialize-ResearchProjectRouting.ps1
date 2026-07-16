@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-  Adds or reconciles managed research routing files without overwriting user content.
+  Adds or reconciles managed research routing files without overwriting conflicting user content.
 #>
 [CmdletBinding()]
 param(
@@ -12,9 +12,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$ConfigurationVersion = '1.0.0'
-$ModelMappingVersion = 'sol-terra-luna-v1'
-$TemplateVersion = 'research-routing-v1'
+$TemplateVersion = 'research-routing-v2'
 $ManagedStart = '<!-- research-agent-routing:start -->'
 $ManagedEnd = '<!-- research-agent-routing:end -->'
 $Utf8NoBom = New-Object Text.UTF8Encoding($false)
@@ -28,6 +26,104 @@ $TemplateRoot = Join-Path $RepositoryRoot 'project-template'
 $ManagedRoot = Join-Path $ProjectDirectory '.research-agent'
 $CandidateRoot = Join-Path $ManagedRoot 'candidates'
 $BackupRoot = Join-Path $ManagedRoot 'backups'
+$CanonicalRoutingPath = Join-Path $RepositoryRoot 'shared\MODEL_ROUTING.json'
+if (-not (Test-Path -LiteralPath $CanonicalRoutingPath -PathType Leaf)) { throw "缺少 canonical 路由配置：$CanonicalRoutingPath" }
+try { $CanonicalRouting = Get-Content -Raw -Encoding UTF8 -LiteralPath $CanonicalRoutingPath | ConvertFrom-Json }
+catch { throw "canonical 路由配置无法解析：$($_.Exception.Message)" }
+$CanonicalRoutingText = [IO.File]::ReadAllText($CanonicalRoutingPath)
+$CanonicalRoutingHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $CanonicalRoutingPath).Hash
+function Assert-HasProperties {
+  param([object]$Object,[string]$Path,[string[]]$Names)
+  if ($null -eq $Object) { throw "canonical contract missing object: $Path" }
+  $actual = @($Object.PSObject.Properties.Name)
+  foreach($name in $Names) {
+    if ($name -notin $actual) { throw "canonical contract missing property: $Path.$name" }
+  }
+  $unexpected = @($actual | Where-Object { $_ -notin $Names })
+  if ($unexpected.Count -gt 0) { throw "canonical contract has unexpected properties at ${Path}: $($unexpected -join ',')" }
+}
+
+function Assert-CanonicalRoutingContract {
+  param([object]$Routing)
+  Assert-HasProperties $Routing 'root' @('schema_version','configuration_version','model_mapping_version','provider','primary_surface','verified_with','routing_mode','runtime_preflight','tiers','fallback','delegation','quality_gates')
+  Assert-HasProperties $Routing.verified_with 'verified_with' @('command','codex_cli_version')
+  Assert-HasProperties $Routing.routing_mode 'routing_mode' @('default','max_initial_blocking_questions','continue_low_risk_work_packages','strict_when')
+  Assert-HasProperties $Routing.runtime_preflight 'runtime_preflight' @('command','strategic_unavailable_status','support_or_economy_unavailable_status')
+  Assert-HasProperties $Routing.tiers 'tiers' @('strategic','support','economy')
+  foreach($tierName in @('strategic','support','economy')) {
+    Assert-HasProperties $Routing.tiers.$tierName "tiers.$tierName" @('model','reasoning_effort','sandbox_mode','purpose')
+  }
+  Assert-HasProperties $Routing.fallback 'fallback' @('same_model_reasoning_tiers','status','when_support_or_economy_is_unavailable')
+  Assert-HasProperties $Routing.delegation 'delegation' @('max_threads','max_depth','subagents_may_delegate','main_agent_reads_every_result','main_agent_final_review')
+  Assert-HasProperties $Routing.quality_gates 'quality_gates' @('L0','L1','L2')
+
+  if ([int]$Routing.schema_version -ne 2) { throw 'canonical contract requires schema_version=2' }
+  if ([string]::IsNullOrWhiteSpace([string]$Routing.configuration_version) -or [string]::IsNullOrWhiteSpace([string]$Routing.model_mapping_version)) { throw 'canonical contract requires version fields' }
+  if ([string]$Routing.provider -ne 'ChatGPT Windows desktop app and Codex' -or [string]$Routing.primary_surface -ne 'project-scoped .codex agents') { throw 'canonical provider/surface contract is invalid' }
+  if ([string]$Routing.verified_with.command -ne 'codex debug models' -or [string]::IsNullOrWhiteSpace([string]$Routing.verified_with.codex_cli_version)) { throw 'canonical verification contract is invalid' }
+  $strictWhen = @($Routing.routing_mode.strict_when)
+  $expectedStrictWhen = @('publication_or_submission','safety_or_high_cost_decision','scientific_final_acceptance')
+  if ([string]$Routing.routing_mode.default -ne 'balanced' -or [int]$Routing.routing_mode.max_initial_blocking_questions -lt 0 -or [int]$Routing.routing_mode.max_initial_blocking_questions -gt 2 -or -not [bool]$Routing.routing_mode.continue_low_risk_work_packages -or (($strictWhen -join '|') -ne ($expectedStrictWhen -join '|'))) { throw 'canonical routing_mode contract is invalid' }
+  if ([string]$Routing.runtime_preflight.command -ne 'codex debug models' -or [string]$Routing.runtime_preflight.strategic_unavailable_status -ne 'blocked_model_catalog' -or [string]$Routing.runtime_preflight.support_or_economy_unavailable_status -ne 'degraded_sol_only') { throw 'canonical runtime_preflight contract is invalid' }
+
+  $expectedTierContract = @{
+    strategic = @{ effort='xhigh'; sandbox='workspace-write' }
+    support = @{ effort='medium'; sandbox='read-only' }
+    economy = @{ effort='low'; sandbox='read-only' }
+  }
+  $models = New-Object Collections.Generic.List[string]
+  foreach($tierName in @('strategic','support','economy')) {
+    $tier = $Routing.tiers.$tierName
+    if ([string]::IsNullOrWhiteSpace([string]$tier.model) -or [string]::IsNullOrWhiteSpace([string]$tier.purpose)) { throw "canonical tier is incomplete: $tierName" }
+    if ([string]$tier.reasoning_effort -ne [string]$expectedTierContract[$tierName].effort -or [string]$tier.sandbox_mode -ne [string]$expectedTierContract[$tierName].sandbox) { throw "canonical tier safety contract is invalid: $tierName" }
+    $models.Add([string]$tier.model)
+  }
+  if (@($models | Select-Object -Unique).Count -ne 3) { throw 'canonical routing models must be distinct' }
+  if ([bool]$Routing.fallback.same_model_reasoning_tiers -or [string]$Routing.fallback.status -ne 'degraded_sol_only' -or [string]$Routing.fallback.when_support_or_economy_is_unavailable -ne 'return the bounded task to strategic Sol; do not substitute an unverified model') { throw 'canonical fallback contract is invalid' }
+  if ([int]$Routing.delegation.max_threads -ne 2 -or [int]$Routing.delegation.max_depth -ne 1 -or [bool]$Routing.delegation.subagents_may_delegate -or -not [bool]$Routing.delegation.main_agent_reads_every_result -or -not [bool]$Routing.delegation.main_agent_final_review) { throw 'canonical delegation safety contract is invalid' }
+  if ([string]$Routing.quality_gates.L0 -ne 'deterministic tool checks' -or [string]$Routing.quality_gates.L1 -ne 'read-only provenance and evidence-completeness checks' -or [string]$Routing.quality_gates.L2 -ne 'strategic scientific judgement and final acceptance') { throw 'canonical quality-gate contract is invalid' }
+}
+
+function Test-RoutingModelCatalog {
+  param([object]$Routing)
+  $availability = [ordered]@{ strategic=$false; support=$false; economy=$false }
+  $unavailable = New-Object Collections.Generic.List[string]
+  $command = Get-Command codex -ErrorAction SilentlyContinue
+  if ($null -eq $command) {
+    foreach($tierName in @('strategic','support','economy')) { $unavailable.Add($tierName) }
+    return [pscustomobject]@{ Status='unavailable'; Command='codex debug models'; RoutingModels=$availability; UnavailableTiers=@($unavailable); Detail='codex command not found' }
+  }
+  try {
+    $raw = @(& $command.Source debug models 2>$null) -join [Environment]::NewLine
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($raw)) { throw 'catalog command failed' }
+    $catalog = $raw | ConvertFrom-Json
+    $models = @($catalog.models)
+    if ($models.Count -eq 0) { throw 'catalog is empty' }
+    foreach($tierName in @('strategic','support','economy')) {
+      $tier = $Routing.tiers.$tierName
+      $matches = @($models | Where-Object { [string]$_.slug -ceq [string]$tier.model })
+      if ($matches.Count -eq 1) {
+        $efforts = @($matches[0].supported_reasoning_levels | ForEach-Object { [string]$_.effort })
+        $availability[$tierName] = ([string]$tier.reasoning_effort -cin $efforts)
+      }
+      if (-not [bool]$availability[$tierName]) { $unavailable.Add($tierName) }
+    }
+    return [pscustomobject]@{ Status='verified'; Command='codex debug models'; RoutingModels=$availability; UnavailableTiers=@($unavailable); Detail='configured model/effort pairs checked' }
+  }
+  catch {
+    foreach($tierName in @('strategic','support','economy')) { $unavailable.Add($tierName) }
+    return [pscustomobject]@{ Status='unavailable'; Command='codex debug models'; RoutingModels=$availability; UnavailableTiers=@($unavailable); Detail='catalog command failed or returned invalid JSON' }
+  }
+}
+
+Assert-CanonicalRoutingContract $CanonicalRouting
+$ConfigurationVersion = [string]$CanonicalRouting.configuration_version
+$ModelMappingVersion = [string]$CanonicalRouting.model_mapping_version
+$MaxThreads = [int]$CanonicalRouting.delegation.max_threads
+$MaxDepth = [int]$CanonicalRouting.delegation.max_depth
+$BlockedModelCatalogStatus = [string]$CanonicalRouting.runtime_preflight.strategic_unavailable_status
+$DegradedStatus = [string]$CanonicalRouting.runtime_preflight.support_or_economy_unavailable_status
+$CatalogCheck = Test-RoutingModelCatalog $CanonicalRouting
 
 function Write-Utf8Text {
   param([string]$Path,[string]$Text)
@@ -50,6 +146,13 @@ function Copy-IfMissing {
   if (-not (Test-Path -LiteralPath $parent -PathType Container)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
   Copy-Item -LiteralPath $Source -Destination $Target
   $changes.Add($Label)
+}
+
+function Backup-ManagedFile {
+  param([string]$Path,[string]$Name)
+  if (-not (Test-Path -LiteralPath $BackupRoot -PathType Container)) { New-Item -ItemType Directory -Path $BackupRoot -Force | Out-Null }
+  $stamp = Get-Date -Format 'yyyyMMdd-HHmmssfff'
+  Copy-Item -LiteralPath $Path -Destination (Join-Path $BackupRoot "$Name.$stamp.bak")
 }
 
 function Add-Conflict {
@@ -91,11 +194,8 @@ function Update-AgentsManagedBlock {
   }
   $newline = if ($text.Contains("`r`n")) { "`r`n" } else { "`n" }
   $canonicalForFile = $canonical -replace "`r?`n",$newline
-  if ($start -lt 0) {
-    $updated = $text.TrimEnd("`r","`n") + $newline + $newline + $canonicalForFile + $newline
-  } else {
-    $updated = $text.Substring(0,$start) + $canonicalForFile + $text.Substring($end + $ManagedEnd.Length)
-  }
+  if ($start -lt 0) { $updated = $text.TrimEnd("`r","`n") + $newline + $newline + $canonicalForFile + $newline }
+  else { $updated = $text.Substring(0,$start) + $canonicalForFile + $text.Substring($end + $ManagedEnd.Length) }
   if ($updated -ne $text) {
     Write-Utf8Text $agentsPath $updated
     $changes.Add('AGENTS.md managed block')
@@ -105,21 +205,15 @@ function Update-AgentsManagedBlock {
 function Update-AgentConfig {
   $source = Join-Path $TemplateRoot '.codex\config.toml'
   $target = Join-Path $ProjectDirectory '.codex\config.toml'
-  if (-not (Test-Path -LiteralPath $target -PathType Leaf)) {
-    Copy-IfMissing $source $target '.codex/config.toml created'
-    return
-  }
+  if (-not (Test-Path -LiteralPath $target -PathType Leaf)) { Copy-IfMissing $source $target '.codex/config.toml created'; return }
   $text = [IO.File]::ReadAllText($target)
   $newline = if ($text.Contains("`r`n")) { "`r`n" } else { "`n" }
   $sectionMatches = [regex]::Matches($text,'(?m)^\s*\[agents\]\s*$')
-  if ($sectionMatches.Count -gt 1) {
-    Add-Conflict '.codex/config.toml' '存在多个 [agents] 区块，无法安全合并' $source
-    return
-  }
+  if ($sectionMatches.Count -gt 1) { Add-Conflict '.codex/config.toml' '存在多个 [agents] 区块，无法安全合并' $source; return }
   $updated = $text
   $conflict = $false
   if ($sectionMatches.Count -eq 0) {
-    $updated = $text.TrimEnd("`r","`n") + $newline + $newline + '[agents]' + $newline + 'max_threads = 2' + $newline + 'max_depth = 1' + $newline
+    $updated = $text.TrimEnd("`r","`n") + $newline + $newline + '[agents]' + $newline + "max_threads = $MaxThreads" + $newline + "max_depth = $MaxDepth" + $newline
   } else {
     $sectionStart = $sectionMatches[0].Index
     $afterHeader = $sectionStart + $sectionMatches[0].Length
@@ -127,7 +221,7 @@ function Update-AgentConfig {
     $sectionEnd = if ($nextSection.Success) { $afterHeader + $nextSection.Index } else { $text.Length }
     $body = $text.Substring($afterHeader,$sectionEnd-$afterHeader)
     $missing = New-Object Collections.Generic.List[string]
-    foreach($item in @(@{Name='max_threads';Value='2'},@{Name='max_depth';Value='1'})) {
+    foreach($item in @(@{Name='max_threads';Value=[string]$MaxThreads},@{Name='max_depth';Value=[string]$MaxDepth})) {
       $pattern = '(?m)^\s*{0}\s*=\s*([^#\r\n]+)' -f [regex]::Escape([string]$item.Name)
       $match = [regex]::Match($body,$pattern)
       if (-not $match.Success) { $missing.Add("$($item.Name) = $($item.Value)"); continue }
@@ -144,42 +238,67 @@ function Update-AgentConfig {
   }
   if ($conflict) { Add-Conflict '.codex/config.toml' '必要字段存在冲突' $source }
   if ($updated -ne $text) {
-    if (-not (Test-Path -LiteralPath $BackupRoot -PathType Container)) { New-Item -ItemType Directory -Path $BackupRoot -Force | Out-Null }
-    $stamp = Get-Date -Format 'yyyyMMdd-HHmmssfff'
-    Copy-Item -LiteralPath $target -Destination (Join-Path $BackupRoot "config.toml.$stamp.bak")
+    Backup-ManagedFile $target 'config.toml'
     Write-Utf8Text $target $updated
     $changes.Add('.codex/config.toml merged')
   }
 }
 
 function Test-AgentFile {
-  param([string]$Text,[string]$Name,[string]$Model,[string]$Effort)
+  param([string]$Text,[string]$Name,[string]$Model,[string]$Effort,[string]$Sandbox)
   return $Text -match ('(?m)^name\s*=\s*"{0}"\s*$' -f [regex]::Escape($Name)) -and
     $Text -match ('(?m)^model\s*=\s*"{0}"\s*$' -f [regex]::Escape($Model)) -and
     $Text -match ('(?m)^model_reasoning_effort\s*=\s*"{0}"\s*$' -f [regex]::Escape($Effort)) -and
-    $Text -match '(?m)^sandbox_mode\s*=\s*"read-only"\s*$'
+    $Text -match ('(?m)^sandbox_mode\s*=\s*"{0}"\s*$' -f [regex]::Escape($Sandbox))
+}
+
+function Test-CompatibleRoutingSnapshot {
+  param([string]$Path)
+  try { $snapshot = Get-Content -Raw -Encoding UTF8 -LiteralPath $Path | ConvertFrom-Json } catch { return $false }
+  foreach($tier in @('strategic','support','economy')) {
+    if ([string]$snapshot.tiers.$tier.model -ne [string]$CanonicalRouting.tiers.$tier.model) { return $false }
+    if ([string]$snapshot.tiers.$tier.reasoning_effort -ne [string]$CanonicalRouting.tiers.$tier.reasoning_effort) { return $false }
+  }
+  foreach($tier in @('support','economy')) {
+    if ([string]$snapshot.tiers.$tier.sandbox_mode -ne 'read-only') { return $false }
+  }
+  $threadsProperty = $snapshot.delegation.PSObject.Properties['max_threads']
+  if ($null -eq $threadsProperty -or [int]$threadsProperty.Value -ne $MaxThreads) { return $false }
+  $depthProperty = $snapshot.delegation.PSObject.Properties['max_depth']
+  if ($null -eq $depthProperty -or [int]$depthProperty.Value -ne $MaxDepth) { return $false }
+  return -not [bool]$snapshot.delegation.subagents_may_delegate -and [bool]$snapshot.delegation.main_agent_final_review
 }
 
 Update-AgentConfig
 
 foreach($agent in @(
-  @{File='research-support.toml';Name='research_support';Model='gpt-5.6-terra';Effort='medium'},
-  @{File='research-output.toml';Name='research_output';Model='gpt-5.6-luna';Effort='low'}
+  @{File='research-support.toml';Name='research_support';Tier='support'},
+  @{File='research-output.toml';Name='research_output';Tier='economy'}
 )) {
+  $tier = $CanonicalRouting.tiers.($agent.Tier)
   $relative = '.codex/agents/' + $agent.File
   $source = Join-Path $TemplateRoot ('.codex\agents\' + $agent.File)
   $target = Join-Path $ProjectDirectory ('.codex\agents\' + $agent.File)
   if (-not (Test-Path -LiteralPath $target -PathType Leaf)) { Copy-IfMissing $source $target "$relative created"; continue }
   $text = [IO.File]::ReadAllText($target)
-  if (-not (Test-AgentFile $text $agent.Name $agent.Model $agent.Effort)) { Add-Conflict $relative '模型、reasoning 或只读边界与托管配置不一致' $source }
+  if (-not (Test-AgentFile $text $agent.Name ([string]$tier.model) ([string]$tier.reasoning_effort) ([string]$tier.sandbox_mode))) { Add-Conflict $relative '模型、reasoning 或只读边界与 canonical 配置不一致' $source }
 }
 
-foreach($file in @('MODEL_ROUTING.json','MODEL_ROUTING.md')) {
-  $source = Join-Path $TemplateRoot ('.research-agent\' + $file)
-  $target = Join-Path $ManagedRoot $file
-  if (-not (Test-Path -LiteralPath $target -PathType Leaf)) { Copy-IfMissing $source $target ".research-agent/$file created"; continue }
-  if ([IO.File]::ReadAllText($source) -ne [IO.File]::ReadAllText($target)) { Add-Conflict ".research-agent/$file" '项目路由副本与当前模板不一致' $source }
+$routingTarget = Join-Path $ManagedRoot 'MODEL_ROUTING.json'
+if (-not (Test-Path -LiteralPath $routingTarget -PathType Leaf)) { Copy-IfMissing $CanonicalRoutingPath $routingTarget '.research-agent/MODEL_ROUTING.json created' }
+elseif ((Get-FileHash -Algorithm SHA256 -LiteralPath $routingTarget).Hash -ne $CanonicalRoutingHash) {
+  if (Test-CompatibleRoutingSnapshot $routingTarget) {
+    Backup-ManagedFile $routingTarget 'MODEL_ROUTING.json'
+    Write-Utf8Text $routingTarget $CanonicalRoutingText
+    $changes.Add('.research-agent/MODEL_ROUTING.json canonicalized')
+  } else { Add-Conflict '.research-agent/MODEL_ROUTING.json' '项目路由快照与 canonical 配置冲突' $CanonicalRoutingPath }
 }
+$ProjectRoutingHash = if (Test-Path -LiteralPath $routingTarget -PathType Leaf) { (Get-FileHash -Algorithm SHA256 -LiteralPath $routingTarget).Hash } else { '' }
+
+$markdownSource = Join-Path $TemplateRoot '.research-agent\MODEL_ROUTING.md'
+$markdownTarget = Join-Path $ManagedRoot 'MODEL_ROUTING.md'
+if (-not (Test-Path -LiteralPath $markdownTarget -PathType Leaf)) { Copy-IfMissing $markdownSource $markdownTarget '.research-agent/MODEL_ROUTING.md created' }
+elseif ([IO.File]::ReadAllText($markdownSource) -ne [IO.File]::ReadAllText($markdownTarget)) { Add-Conflict '.research-agent/MODEL_ROUTING.md' '项目路由说明与当前模板不一致' $markdownSource }
 
 Update-AgentsManagedBlock
 
@@ -187,6 +306,9 @@ $reportPath = Join-Path $ManagedRoot 'routing-conflicts.md'
 if ($conflicts.Count -gt 0) {
   $report = @('# Research Agent Routing Conflicts','','启动器未覆盖以下现有配置：','') + @($conflicts | ForEach-Object { '- ' + $_ })
   [void](Write-IfChanged $reportPath (($report -join "`r`n") + "`r`n"))
+} elseif (Test-Path -LiteralPath $reportPath -PathType Leaf) {
+  Remove-Item -LiteralPath $reportPath -Force
+  $changes.Add('.research-agent/routing-conflicts.md cleared')
 }
 
 $versionPath = Join-Path $ManagedRoot 'routing-version.json'
@@ -194,23 +316,65 @@ $versionCurrent = $null
 if (Test-Path -LiteralPath $versionPath -PathType Leaf) {
   try { $versionCurrent = Get-Content -Raw -Encoding UTF8 -LiteralPath $versionPath | ConvertFrom-Json } catch { $versionCurrent = $null }
 }
-$versionMatches = $null -ne $versionCurrent -and
-  [string]$versionCurrent.configuration_version -eq $ConfigurationVersion -and
-  [string]$versionCurrent.model_mapping_version -eq $ModelMappingVersion -and
-  [string]$versionCurrent.template_version -eq $TemplateVersion -and
-  -not [string]::IsNullOrWhiteSpace([string]$versionCurrent.last_completed_at)
+$UnavailableTiers = @($CatalogCheck.UnavailableTiers)
+if (-not [bool]$CatalogCheck.RoutingModels.strategic) { $status = $BlockedModelCatalogStatus }
+elseif ($conflicts.Count -gt 0) { $status = 'blocked_conflict' }
+elseif ($UnavailableTiers.Count -gt 0) { $status = $DegradedStatus }
+else { $status = 'ready' }
+$launchAllowed = $status -in @('ready',$DegradedStatus)
+$versionMatches = $false
+if ($null -ne $versionCurrent) {
+  try {
+    $versionMatches =
+      [string]$versionCurrent.status -eq $status -and
+      [string]$versionCurrent.configuration_version -eq $ConfigurationVersion -and
+      [string]$versionCurrent.model_mapping_version -eq $ModelMappingVersion -and
+      [string]$versionCurrent.template_version -eq $TemplateVersion -and
+      [string]$versionCurrent.canonical_sha256 -eq $CanonicalRoutingHash -and
+      [string]$versionCurrent.snapshot_sha256 -eq $ProjectRoutingHash -and
+      [int]$versionCurrent.conflict_count -eq $conflicts.Count -and
+      [string]$versionCurrent.catalog.status -eq [string]$CatalogCheck.Status -and
+      [string]$versionCurrent.catalog.command -eq [string]$CatalogCheck.Command -and
+      [string]$versionCurrent.catalog.detail -eq [string]$CatalogCheck.Detail -and
+      [bool]$versionCurrent.catalog.routing_models.strategic -eq [bool]$CatalogCheck.RoutingModels.strategic -and
+      [bool]$versionCurrent.catalog.routing_models.support -eq [bool]$CatalogCheck.RoutingModels.support -and
+      [bool]$versionCurrent.catalog.routing_models.economy -eq [bool]$CatalogCheck.RoutingModels.economy -and
+      ((@($versionCurrent.unavailable_tiers) -join '|') -eq ($UnavailableTiers -join '|')) -and
+      ((-not $launchAllowed) -or -not [string]::IsNullOrWhiteSpace([string]$versionCurrent.last_completed_at))
+  } catch { $versionMatches = $false }
+}
 if (-not $versionMatches -or $changes.Count -gt 0) {
+  $now = (Get-Date).ToUniversalTime().ToString('o')
   $version = [ordered]@{
+    status = $status
     configuration_version = $ConfigurationVersion
     model_mapping_version = $ModelMappingVersion
     template_version = $TemplateVersion
-    last_completed_at = (Get-Date).ToUniversalTime().ToString('o')
+    canonical_sha256 = $CanonicalRoutingHash
+    snapshot_sha256 = $ProjectRoutingHash
+    schema_version = [int]$CanonicalRouting.schema_version
+    conflict_count = $conflicts.Count
+    catalog = [ordered]@{
+      status = [string]$CatalogCheck.Status
+      command = [string]$CatalogCheck.Command
+      routing_models = [ordered]@{
+        strategic = [bool]$CatalogCheck.RoutingModels.strategic
+        support = [bool]$CatalogCheck.RoutingModels.support
+        economy = [bool]$CatalogCheck.RoutingModels.economy
+      }
+      detail = [string]$CatalogCheck.Detail
+    }
+    unavailable_tiers = @($UnavailableTiers)
+    last_checked_at = $now
+    last_completed_at = if($launchAllowed){$now}else{$null}
   }
-  Write-Utf8Text $versionPath (($version | ConvertTo-Json -Depth 3) + "`r`n")
-  if ($changes -notcontains '.research-agent/routing-version.json updated') { $changes.Add('.research-agent/routing-version.json updated') }
+  Write-Utf8Text $versionPath (($version | ConvertTo-Json -Depth 5) + [Environment]::NewLine)
+  $changes.Add('.research-agent/routing-version.json updated')
 }
 
 if (-not $Quiet) {
-  Write-Output "ROUTING_PREFLIGHT changes=$($changes.Count) warnings=$($conflicts.Count)"
+  Write-Output "ROUTING_PREFLIGHT status=$status catalog=$($CatalogCheck.Status) unavailable=$($UnavailableTiers -join ',') changes=$($changes.Count) conflicts=$($conflicts.Count)"
   foreach($change in $changes) { Write-Output "ROUTING_CHANGE $change" }
 }
+if ($status -eq $BlockedModelCatalogStatus) { throw "ROUTING_BLOCKED_MODEL_CATALOG catalog=$($CatalogCheck.Status) unavailable=$($UnavailableTiers -join ',')" }
+if ($conflicts.Count -gt 0) { throw "ROUTING_BLOCKED_CONFLICT count=$($conflicts.Count); resolve routing-conflicts.md and retry." }

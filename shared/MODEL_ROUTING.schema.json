@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/LJAKE03/JAKE-research-agent-skills/raw/master/shared/MODEL_ROUTING.schema.json",
+  "title": "Research Agent Model Routing",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "configuration_version", "model_mapping_version", "provider", "primary_surface", "verified_with", "routing_mode", "runtime_preflight", "tiers", "fallback", "delegation", "quality_gates"],
+  "properties": {
+    "schema_version": {"const": 2},
+    "configuration_version": {"type": "string", "minLength": 1},
+    "model_mapping_version": {"type": "string", "minLength": 1},
+    "provider": {"const": "ChatGPT Windows desktop app and Codex"},
+    "primary_surface": {"const": "project-scoped .codex agents"},
+    "verified_with": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "codex_cli_version"],
+      "properties": {
+        "command": {"const": "codex debug models"},
+        "codex_cli_version": {"type": "string", "minLength": 1}
+      }
+    },
+    "routing_mode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default", "max_initial_blocking_questions", "continue_low_risk_work_packages", "strict_when"],
+      "properties": {
+        "default": {"const": "balanced"},
+        "max_initial_blocking_questions": {"type": "integer", "minimum": 0, "maximum": 2},
+        "continue_low_risk_work_packages": {"const": true},
+        "strict_when": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "prefixItems": [
+            {"const": "publication_or_submission"},
+            {"const": "safety_or_high_cost_decision"},
+            {"const": "scientific_final_acceptance"}
+          ],
+          "items": false
+        }
+      }
+    },
+    "runtime_preflight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "strategic_unavailable_status", "support_or_economy_unavailable_status"],
+      "properties": {
+        "command": {"const": "codex debug models"},
+        "strategic_unavailable_status": {"const": "blocked_model_catalog"},
+        "support_or_economy_unavailable_status": {"const": "degraded_sol_only"}
+      }
+    },
+    "tiers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["strategic", "support", "economy"],
+      "properties": {
+        "strategic": {"$ref": "#/$defs/strategicTier"},
+        "support": {"$ref": "#/$defs/supportTier"},
+        "economy": {"$ref": "#/$defs/economyTier"}
+      }
+    },
+    "fallback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["same_model_reasoning_tiers", "status", "when_support_or_economy_is_unavailable"],
+      "properties": {
+        "same_model_reasoning_tiers": {"const": false},
+        "status": {"const": "degraded_sol_only"},
+        "when_support_or_economy_is_unavailable": {"const": "return the bounded task to strategic Sol; do not substitute an unverified model"}
+      }
+    },
+    "delegation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_threads", "max_depth", "subagents_may_delegate", "main_agent_reads_every_result", "main_agent_final_review"],
+      "properties": {
+        "max_threads": {"const": 2},
+        "max_depth": {"const": 1},
+        "subagents_may_delegate": {"const": false},
+        "main_agent_reads_every_result": {"const": true},
+        "main_agent_final_review": {"const": true}
+      }
+    },
+    "quality_gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["L0", "L1", "L2"],
+      "properties": {
+        "L0": {"const": "deterministic tool checks"},
+        "L1": {"const": "read-only provenance and evidence-completeness checks"},
+        "L2": {"const": "strategic scientific judgement and final acceptance"}
+      }
+    }
+  },
+  "$defs": {
+    "strategicTier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model", "reasoning_effort", "sandbox_mode", "purpose"],
+      "properties": {
+        "model": {"type": "string", "minLength": 1},
+        "reasoning_effort": {"const": "xhigh"},
+        "sandbox_mode": {"const": "workspace-write"},
+        "purpose": {"type": "string", "minLength": 1}
+      }
+    },
+    "supportTier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model", "reasoning_effort", "sandbox_mode", "purpose"],
+      "properties": {
+        "model": {"type": "string", "minLength": 1},
+        "reasoning_effort": {"const": "medium"},
+        "sandbox_mode": {"const": "read-only"},
+        "purpose": {"type": "string", "minLength": 1}
+      }
+    },
+    "economyTier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model", "reasoning_effort", "sandbox_mode", "purpose"],
+      "properties": {
+        "model": {"type": "string", "minLength": 1},
+        "reasoning_effort": {"const": "low"},
+        "sandbox_mode": {"const": "read-only"},
+        "purpose": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

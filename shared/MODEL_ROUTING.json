@@ -1,51 +1,59 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
+  "configuration_version": "1.1.0",
+  "model_mapping_version": "sol-terra-luna-v1",
   "provider": "ChatGPT Windows desktop app and Codex",
   "primary_surface": "project-scoped .codex agents",
   "verified_with": {
     "command": "codex debug models",
     "codex_cli_version": "0.144.1"
   },
+  "routing_mode": {
+    "default": "balanced",
+    "max_initial_blocking_questions": 2,
+    "continue_low_risk_work_packages": true,
+    "strict_when": ["publication_or_submission", "safety_or_high_cost_decision", "scientific_final_acceptance"]
+  },
+  "runtime_preflight": {
+    "command": "codex debug models",
+    "strategic_unavailable_status": "blocked_model_catalog",
+    "support_or_economy_unavailable_status": "degraded_sol_only"
+  },
   "tiers": {
     "strategic": {
       "model": "gpt-5.6-sol",
       "reasoning_effort": "xhigh",
+      "sandbox_mode": "workspace-write",
       "purpose": "research planning, key technical judgement, evidence review, and final acceptance"
     },
     "support": {
       "model": "gpt-5.6-terra",
       "reasoning_effort": "medium",
-      "purpose": "bounded extraction, scanning, summarization, and deterministic test work"
+      "sandbox_mode": "read-only",
+      "purpose": "bounded extraction, scanning, evidence inventory, and deterministic checks"
     },
     "economy": {
       "model": "gpt-5.6-luna",
       "reasoning_effort": "low",
-      "purpose": "mechanical formatting and transformations of already confirmed content"
+      "sandbox_mode": "read-only",
+      "purpose": "mechanical formatting and transformations of complete, confirmed content"
     }
   },
   "fallback": {
     "same_model_reasoning_tiers": false,
-    "reason": "Sol, Terra, and Luna are available and verified for their assigned project-level routes.",
-    "when_support_or_economy_is_unavailable": "return the bounded task to strategic Sol while preserving the documented permission boundary; do not substitute an unverified model"
+    "status": "degraded_sol_only",
+    "when_support_or_economy_is_unavailable": "return the bounded task to strategic Sol; do not substitute an unverified model"
   },
   "delegation": {
-    "cross_model_subagents_verified": true,
-    "custom_agent_config_verified": true,
-    "max_concurrent_subagents": 2,
+    "max_threads": 2,
+    "max_depth": 1,
     "subagents_may_delegate": false,
     "main_agent_reads_every_result": true,
     "main_agent_final_review": true
   },
-  "classification_examples": [
-    { "task": "规划板式氨重整反应器完整研究路线", "route": "strategic" },
-    { "task": "分析 Fluent 能量方程发散原因", "route": "strategic" },
-    { "task": "设计下一批 GT-POWER 参数扫描 Case", "route": "strategic" },
-    { "task": "从 30 篇文献中提取工况和结论", "route": "support" },
-    { "task": "将已确认内容整理成 PPT 表格", "route": "economy" },
-    { "task": "统一 Markdown 编号和标点", "route": "economy" },
-    { "task": "修改 Windows 快捷方式", "tool": "PowerShell" },
-    { "task": "批量处理 CSV 仿真结果", "tool": "Python" },
-    { "task": "搜索仓库中某个参数", "tool": "rg" },
-    { "task": "查看 Git 修改", "tool": "git diff" }
-  ]
+  "quality_gates": {
+    "L0": "deterministic tool checks",
+    "L1": "read-only provenance and evidence-completeness checks",
+    "L2": "strategic scientific judgement and final acceptance"
+  }
 }

@@ -6,6 +6,8 @@
 - Terra 与 Luna 均已在本机目录中验证，可用于项目级自定义子代理。
 - 项目级 `.codex/config.toml` 与 `.codex/agents/*.toml` 已存在并通过严格配置和路由测试：`max_threads=2`、`max_depth=1`；`research-support` 使用 Terra/`medium`/只读，`research-output` 使用 Luna/`low`/只读。
 - Windows 应用版以项目级配置为主要路由机制；CLI 的 `--profile research` 仅作为兼容入口。本仓库只提供 `config/research.config.toml.template`，不覆盖用户的 `~/.codex/config.toml`。
+- `shared/MODEL_ROUTING.json` 是唯一 canonical JSON；Draft 2020-12 Schema 和运行时安全契约共同校验它。项目快照必须与 canonical 的 SHA256 一致。
+- 默认采用平衡快速模式：首轮 0–2 个阻断问题；投稿、申报、安全、高成本决策和科学最终验收切换严格模式。`codex debug models` 无法核验或 Sol 不可用时阻断启动；仅 Terra/Luna 缺失时提示并进入 Sol-only。
 
 ## 三层逻辑路由
 
@@ -24,7 +26,7 @@
 - C 类仅在输入完整、格式明确、无需新判断且可机械验收时才可交给 `economy`；主代理仍需抽检。
 - D 类混合任务先由主代理确定框架，再委派明确部分，最后由主代理合并验收。
 - 默认并发不超过 2；子代理不得递归创建子代理；主代理必须阅读每一份结果并生成面对用户的最终答复。
-- 模型映射变更前必须重新运行 `codex debug models`，并同步更新 agent TOML、`MODEL_ROUTING.json` 和路由测试。
+- 模型映射变更前必须重新运行 `codex debug models`；先修改 canonical JSON，再让 agent TOML、项目快照和测试从 canonical 派生或接受一致性检查。
 
 ## 工具路由与输出控制
 
@@ -42,5 +44,5 @@
 3. 关闭子代理时，由主代理直接执行 B/C 类任务；不得把关键科研判断交给低 reasoning 任务。
 4. CLI 用户可选地将模板复制为 `$CODEX_HOME/research.config.toml` 并运行 `codex --profile research`；该兼容方式不参与应用版项目级子代理路由，也不修改用户默认配置。
 5. 调整模型或 reasoning 前先运行 `codex debug models`；配置变更后执行应用路由专项自检和全量 Skills 自检。
-6. 路由记录见 `shared/MODEL_ROUTING.json`；专项自检运行 `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-ResearchAppRouting.ps1`，完整验收运行 `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-ResearchSkills.ps1`。
+6. 路由记录见 `shared/MODEL_ROUTING.json`；发布前严格运行 `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-ResearchSkills.ps1`，并保证 Python `jsonschema` 可用。仅做离线静态检查时显式追加 `-AllowUnverifiedModelCatalog`；不得在发布验收中使用该开关。
 7. 如需回退 CLI 兼容 profile，只删除用户自行复制的 `research.config.toml`；这不会影响项目级 `.codex/agents` 或用户原有默认配置。

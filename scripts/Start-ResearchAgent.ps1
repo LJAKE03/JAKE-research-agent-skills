@@ -341,11 +341,28 @@ function Confirm-ProjectReady {
   if(-not(Test-Project $path)){throw "该目录缺少 AGENTS.md 或 PROJECT_STATE.md：$path"}
   $routingOutput=@(& $script:RoutingInitializer -ProjectDirectory $path -RepositoryRoot $script:RepositoryRoot)
   $routingOutput|ForEach-Object{Write-Host $_}
-  if(-not(Test-Path -LiteralPath (Join-Path $path '.research-agent\routing-version.json') -PathType Leaf)){throw "科研路由补齐未完成：$path"}
+  $versionPath=Join-Path $path '.research-agent\routing-version.json'
+  if(-not(Test-Path -LiteralPath $versionPath -PathType Leaf)){throw "科研路由补齐未完成：$path"}
+  try{$routingStatus=Get-Content -Raw -Encoding UTF8 -LiteralPath $versionPath|ConvertFrom-Json}catch{throw "科研路由状态无效：$($_.Exception.Message)"}
+  if([int]$routingStatus.conflict_count -ne 0){throw "Routing conflicts remain: $($routingStatus.conflict_count)"}
+  $canonicalPath=Join-Path $script:RepositoryRoot 'shared\MODEL_ROUTING.json'
+  $canonicalHash=(Get-FileHash -Algorithm SHA256 -LiteralPath $canonicalPath).Hash
+  $snapshotPath=Join-Path $path '.research-agent\MODEL_ROUTING.json'
+  if(-not(Test-Path -LiteralPath $snapshotPath -PathType Leaf)){throw 'Project routing snapshot is missing.'}
+  $snapshotHash=(Get-FileHash -Algorithm SHA256 -LiteralPath $snapshotPath).Hash
+  if([string]$routingStatus.canonical_sha256 -ne $canonicalHash -or [string]$routingStatus.snapshot_sha256 -ne $snapshotHash -or $snapshotHash -ne $canonicalHash){throw 'Routing snapshot or status hash mismatch.'}
+  $routingState=[string]$routingStatus.status
+  $catalogState=[string]$routingStatus.catalog.status
+  $unavailable=@($routingStatus.unavailable_tiers)
+  if($routingState -eq 'ready'){
+    if($catalogState -ne 'verified' -or $unavailable.Count -ne 0){throw 'Ready status has inconsistent catalog evidence.'}
+  }elseif($routingState -eq 'degraded_sol_only'){
+    if($catalogState -ne 'verified' -or -not [bool]$routingStatus.catalog.routing_models.strategic -or 'strategic' -in $unavailable -or $unavailable.Count -eq 0){throw 'Invalid Sol-only degraded status.'}
+    Write-Warning "Routing degraded to Sol-only; unavailable tiers: $($unavailable -join ',')"
+  }else{throw "Routing preflight is not ready: status=$routingState catalog=$catalogState"}
 
   return [string]$path
 }
-
 function Assert-NoPendingProjectState {
   [CmdletBinding()]
   param(
@@ -429,7 +446,7 @@ function Get-ExistingPrompt {
 不要重复询问已经确认的信息。
 不要重复执行已经完成的工作。
 可自行检索的信息优先检索。
-完成当前工作包后进入质量门，并等待用户确认。
+完成当前工作包后执行最低充分质量门；低风险且可逆时连续推进，到高影响决策、证据不足或不可逆操作前再等待用户确认。
 '@
   return $template.Replace('【用户输入的任务】',$Task)
 }
@@ -480,7 +497,7 @@ function Start-CodexDesktop {
 function Invoke-SkillCheck {
   $scriptPath=Join-Path $script:ScriptsRoot 'Test-ResearchSkills.ps1'
   & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $scriptPath
-  if($LASTEXITCODE -eq 0){Write-Host 'Skills 检查结果：PASS 或 WARNING。'}else{Write-Host "Skills 检查结果：FAIL（退出代码：$LASTEXITCODE）。" -ForegroundColor Red}
+  if($LASTEXITCODE -eq 0){Write-Host 'Skills 检查结果：PASS。'}else{Write-Host "Skills 检查结果：FAIL（退出代码：$LASTEXITCODE）。如仅做离线静态检查，请显式运行 Test-ResearchSkills.ps1 -AllowUnverifiedModelCatalog。" -ForegroundColor Red}
   Read-Host '按 Enter 返回启动器'
 }
 

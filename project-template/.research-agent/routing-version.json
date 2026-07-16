@@ -1,6 +1,25 @@
 {
-  "configuration_version": "1.0.0",
-  "model_mapping_version": "sol-terra-luna-v1",
-  "template_version": "research-routing-v1",
-  "last_completed_at": null
+    "status":  "pending",
+    "configuration_version":  "1.1.0",
+    "model_mapping_version":  "sol-terra-luna-v1",
+    "template_version":  "research-routing-v2",
+    "canonical_sha256":  null,
+    "snapshot_sha256":  null,
+    "schema_version":  2,
+    "conflict_count":  0,
+    "catalog":  {
+                    "status":  "pending",
+                    "command":  "codex debug models",
+                    "routing_models":  {
+                                           "strategic":  null,
+                                           "support":  null,
+                                           "economy":  null
+                                       },
+                    "detail":  null
+                },
+    "unavailable_tiers":  [
+
+                          ],
+    "last_checked_at":  null,
+    "last_completed_at":  null
 }
