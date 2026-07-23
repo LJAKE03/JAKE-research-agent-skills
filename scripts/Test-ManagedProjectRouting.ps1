@@ -105,7 +105,7 @@ try {
   }
   $orchestratorText=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '00-research-orchestrator\SKILL.md')
   Assert-Test ($orchestratorText.Contains('../shared/MODEL_ROUTING.json') -and $orchestratorText.Contains('../shared/STAGE_HANDOFF.schema.json') -and $orchestratorText.Contains('Sol') -and $orchestratorText.Contains('Terra') -and $orchestratorText.Contains('Luna')) 'orchestrator model and handoff references resolve'
-  Assert-Test (-not($orchestratorText -match 'Fast|Standard|Strict|Exploratory|Direct|Focused|Open Research|CAPABILITY_MANIFEST|RUNTIME_POLICY')) 'orchestrator has no public modes or runtime framework'
+  Assert-Test (-not($orchestratorText -match '\bFast\b|\bStandard\b|\bStrict\b(?!-)|\bExploratory\b|\bDirect\b|\bFocused\b|Open Research|CAPABILITY_MANIFEST|RUNTIME_POLICY')) 'orchestrator has no public modes or runtime framework'
   foreach($relative in @('.research-agent\MODEL_ROUTING.json','.research-agent\MODEL_ROUTING.md')) {
     Assert-Test (Test-Path -LiteralPath (Join-Path $newProject $relative) -PathType Leaf) "project relative reference resolves $relative"
   }

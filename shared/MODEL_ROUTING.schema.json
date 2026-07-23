@@ -4,7 +4,7 @@
   "title": "Research Agent Model Routing",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "configuration_version", "model_mapping_version", "provider", "primary_surface", "verified_with", "workflow", "runtime_preflight", "tiers", "fallback", "delegation", "quality_gates"],
+  "required": ["schema_version", "configuration_version", "model_mapping_version", "provider", "primary_surface", "verified_with", "workflow", "runtime_preflight", "runtime_dispatch", "tiers", "fallback", "delegation", "quality_gates"],
   "properties": {
     "schema_version": {"const": 2},
     "configuration_version": {"type": "string", "minLength": 1},
@@ -51,6 +51,23 @@
         "command": {"const": "codex debug models"},
         "strategic_unavailable_status": {"const": "blocked_model_catalog"},
         "support_or_economy_unavailable_status": {"const": "degraded_sol_only"}
+      }
+    },
+    "runtime_dispatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_agent_type", "economy_agent_type", "fork_turns", "preferred_call_shape", "compatible_call_shape", "isolated_call_shape", "require_runtime_evidence", "require_spawn_evidence", "self_report_is_evidence", "failure_status"],
+      "properties": {
+        "support_agent_type": {"const": "research_support"},
+        "economy_agent_type": {"const": "research_output"},
+        "fork_turns": {"const": "none"},
+        "preferred_call_shape": {"const": "agent_type"},
+        "compatible_call_shape": {"const": "explicit_model"},
+        "isolated_call_shape": {"const": "codex_exec"},
+        "require_runtime_evidence": {"const": true},
+        "require_spawn_evidence": {"const": true},
+        "self_report_is_evidence": {"const": false},
+        "failure_status": {"const": "degraded_sol_only"}
       }
     },
     "tiers": {

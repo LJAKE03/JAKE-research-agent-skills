@@ -1,4 +1,20 @@
-# Managed research-agent concurrency and nesting limits.
+# Managed research-agent model routing, concurrency, and nesting limits.
+model = "gpt-5.6-sol"
+model_reasoning_effort = "xhigh"
+
+[features]
+multi_agent = true
+
 [agents]
 max_threads = 2
 max_depth = 1
+
+[agents.research_support]
+description = "Read-only Terra worker for bounded search, verification, scanning, extraction, evidence tables, and provenance checks."
+config_file = "agents/research-support.toml"
+nickname_candidates = ["Evidence", "Survey", "Verifier"]
+
+[agents.research_output]
+description = "Read-only Luna worker for prose, language, and formatting from a complete locked research writing package."
+config_file = "agents/research-output.toml"
+nickname_candidates = ["Writer", "Editor", "Formatter"]

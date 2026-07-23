@@ -113,13 +113,11 @@ description: Use when a research task, project, paper, review, report, experimen
 - 影响：
 - 后续验证方式：
 
-## 推荐运行模式
-- 快速 / 标准 / 严格
-- 理由：
-
-## 建议下一 Skill
-- Skill：
+## 下一工作
+- 建议下一 Skill：
 - 原因：
+- 进入条件：
+- 需要用户确认的高影响事项：
 ```
 
 ## 7. 返回规则

@@ -49,7 +49,10 @@ foreach($agent in @(
 foreach($relative in @('.codex\config.toml','project-template\.codex\config.toml')){
   $path=Join-Path $SourceRoot $relative
   $text=[IO.File]::ReadAllText($path)
-  $updated=Update-RequiredLine $text '(?m)^max_threads[ \t]*=[ \t]*\d+[ \t]*(?=\r?$)' ('max_threads = '+[int]$routing.delegation.max_threads) "$relative max_threads"
+  $updated=Update-RequiredLine $text '(?m)^model[ \t]*=[ \t]*"[^"]+"[ \t]*(?=\r?$)' ('model = "'+[string]$routing.tiers.strategic.model+'"') "$relative strategic model"
+  $updated=Update-RequiredLine $updated '(?m)^model_reasoning_effort[ \t]*=[ \t]*"[^"]+"[ \t]*(?=\r?$)' ('model_reasoning_effort = "'+[string]$routing.tiers.strategic.reasoning_effort+'"') "$relative strategic reasoning"
+  $updated=Update-RequiredLine $updated '(?m)^multi_agent[ \t]*=[ \t]*(true|false)[ \t]*(?=\r?$)' 'multi_agent = true' "$relative multi_agent"
+  $updated=Update-RequiredLine $updated '(?m)^max_threads[ \t]*=[ \t]*\d+[ \t]*(?=\r?$)' ('max_threads = '+[int]$routing.delegation.max_threads) "$relative max_threads"
   $updated=Update-RequiredLine $updated '(?m)^max_depth[ \t]*=[ \t]*\d+[ \t]*(?=\r?$)' ('max_depth = '+[int]$routing.delegation.max_depth) "$relative max_depth"
   Write-TextIfChanged $path $updated $relative
 }
@@ -58,7 +61,7 @@ $pending=[ordered]@{
   status='pending'
   configuration_version=[string]$routing.configuration_version
   model_mapping_version=[string]$routing.model_mapping_version
-  template_version='research-routing-v2'
+  template_version='research-routing-v5'
   canonical_sha256=$null
   snapshot_sha256=$null
   schema_version=[int]$routing.schema_version

@@ -29,9 +29,14 @@ $expected = @{
 $projectConfig = Join-Path $SourceRoot '.codex\config.toml'
 if (Test-Path -LiteralPath $projectConfig) {
   $configText = Get-Content -Raw -Encoding UTF8 -LiteralPath $projectConfig
+  Test-Text $configText '(?m)^model\s*=\s*"gpt-5\.6-sol"\s*$' 'root strategic model pinned'
+  Test-Text $configText '(?m)^model_reasoning_effort\s*=\s*"xhigh"\s*$' 'root strategic reasoning pinned'
+  Test-Text $configText '(?ms)^\[features\].*?^multi_agent\s*=\s*true\s*$' 'multi-agent explicitly enabled'
   Test-Text $configText '(?m)^\[agents\]\s*$' 'agent config section'
   Test-Text $configText '(?m)^max_threads\s*=\s*2\s*$' 'agent concurrency cap'
   Test-Text $configText '(?m)^max_depth\s*=\s*1\s*$' 'agent nesting cap'
+  Test-Text $configText '(?ms)^\[agents\.research_support\].*?^config_file\s*=\s*"agents/research-support\.toml"\s*$' 'support role registered'
+  Test-Text $configText '(?ms)^\[agents\.research_output\].*?^config_file\s*=\s*"agents/research-output\.toml"\s*$' 'output role registered'
 } else { Add-Result FAIL 'project agent config' 'missing' }
 
 $routingJsonPath = Join-Path $SourceRoot 'shared\MODEL_ROUTING.json'
@@ -54,6 +59,16 @@ if (Test-Path -LiteralPath $routingJsonPath) {
     Test-Value ([bool]$routing.delegation.subagents_may_delegate) $false 'routing JSON nesting boundary'
     Test-Value ([string]$routing.workflow.default) 'unified' 'routing JSON unified workflow'
     Test-Value ([int]$routing.workflow.max_initial_blocking_questions) 2 'routing JSON blocking-question cap'
+    Test-Value ([string]$routing.runtime_dispatch.support_agent_type) 'research_support' 'routing JSON support agent type'
+    Test-Value ([string]$routing.runtime_dispatch.economy_agent_type) 'research_output' 'routing JSON output agent type'
+    Test-Value ([string]$routing.runtime_dispatch.fork_turns) 'none' 'routing JSON specialized fork mode'
+    Test-Value ([string]$routing.runtime_dispatch.preferred_call_shape) 'agent_type' 'routing JSON preferred spawn call shape'
+    Test-Value ([string]$routing.runtime_dispatch.compatible_call_shape) 'explicit_model' 'routing JSON compatible spawn call shape'
+    Test-Value ([string]$routing.runtime_dispatch.isolated_call_shape) 'codex_exec' 'routing JSON isolated call shape'
+    Test-Value ([bool]$routing.runtime_dispatch.require_runtime_evidence) $true 'routing JSON requires runtime evidence'
+    Test-Value ([bool]$routing.runtime_dispatch.require_spawn_evidence) $true 'routing JSON requires spawn evidence'
+    Test-Value ([bool]$routing.runtime_dispatch.self_report_is_evidence) $false 'routing JSON rejects self-report evidence'
+    Test-Value ([string]$routing.runtime_dispatch.failure_status) 'degraded_sol_only' 'routing JSON dispatch failure status'
     Test-Value (@($routing.workflow.sol_semantic_acceptance_when)-join ',') 'publication_or_submission,key_parameter_or_core_method,safety_or_high_cost_decision,scientific_final_acceptance' 'routing JSON Sol acceptance triggers'
   }
   catch { Add-Result FAIL 'routing JSON parse' $_.Exception.Message }
@@ -126,8 +141,13 @@ if (Test-Path -LiteralPath $cliTemplatePath) {
 $templateConfigPath = Join-Path $SourceRoot 'project-template\.codex\config.toml'
 if (Test-Path -LiteralPath $templateConfigPath) {
   $templateConfig = Get-Content -Raw -Encoding UTF8 -LiteralPath $templateConfigPath
+  Test-Text $templateConfig '(?m)^model\s*=\s*"gpt-5\.6-sol"\s*$' 'template strategic model pinned'
+  Test-Text $templateConfig '(?m)^model_reasoning_effort\s*=\s*"xhigh"\s*$' 'template strategic reasoning pinned'
+  Test-Text $templateConfig '(?ms)^\[features\].*?^multi_agent\s*=\s*true\s*$' 'template multi-agent enabled'
   Test-Text $templateConfig '(?m)^max_threads\s*=\s*2\s*$' 'template concurrency cap'
   Test-Text $templateConfig '(?m)^max_depth\s*=\s*1\s*$' 'template nesting cap'
+  Test-Text $templateConfig '(?m)^\[agents\.research_support\]\s*$' 'template support role registration'
+  Test-Text $templateConfig '(?m)^\[agents\.research_output\]\s*$' 'template output role registration'
 } else { Add-Result FAIL 'template agent config' 'missing' }
 
 foreach($templateAgent in @(
@@ -160,6 +180,7 @@ foreach($skillName in @('00-research-orchestrator','01-requirement-elicitation',
   $skillText = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot "$skillName\SKILL.md")
   Test-Text $skillText 'routing-preflight:required' "$skillName routing preflight"
   Test-Text $skillText '\.\./shared/MODEL_ROUTING\.json' "$skillName routing reference"
+  Test-NoText $skillText '\bFast\b|\bStandard\b|\bStrict\b(?!-)|\bExploratory\b|\bDirect\b|\bFocused\b|Open Research|快速 / 标准 / 严格|推荐运行模式' "$skillName has no public workflow mode"
 }
 
 $codex = Get-Command codex -ErrorAction SilentlyContinue
@@ -235,8 +256,18 @@ Test-Text $orchestrator '`rg`/`rg --files`' 'native search boundary'
 Test-Text $orchestrator '`git diff`' 'Git inspection boundary'
 Test-Text $orchestrator 'Large results must be written to files\.' 'output control'
 Test-Text $orchestrator 'STAGE_HANDOFF\.schema\.json' 'compact handoff schema reference'
+Test-Text $orchestrator 'agent_type=research_support.*fork_turns=none' 'orchestrator preferred Terra dispatch'
+Test-Text $orchestrator 'agent_type=research_output.*fork_turns=none' 'orchestrator preferred Luna dispatch'
+Test-Text $orchestrator 'task_name=research_support, model=gpt-5\.6-terra, reasoning_effort=medium, fork_turns=none' 'orchestrator compatible Terra dispatch'
+Test-Text $orchestrator 'task_name=research_output, model=gpt-5\.6-luna, reasoning_effort=low, fork_turns=none' 'orchestrator compatible Luna dispatch'
+Test-Text $orchestrator 'codex --disable multi_agent exec.*--ephemeral.*--sandbox read-only -m gpt-5\.6-terra.*reasoning_effort="medium"' 'orchestrator isolated Terra dispatch'
+Test-Text $orchestrator 'Luna 使用相同命令但模型为 .*gpt-5\.6-luna.*reasoning 为 .*low' 'orchestrator isolated Luna dispatch'
+Test-Text $orchestrator '真实创建的子线程、成功的 spawn 工具结果.*一次性 .*codex exec' 'orchestrator runtime evidence rule'
+Test-Text $orchestrator 'degraded_sol_only' 'orchestrator transparent dispatch fallback'
+$academicWriting = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '05-academic-writing\SKILL.md')
+Test-Text $academicWriting '不得写成由用户显式选择模型、Agent 或模式' 'Luna routing wording acceptance'
 foreach($field in @('objective','input_locators','locked_decisions','output_contract','acceptance_checks','stop_conditions')) { Test-Text $orchestrator ([regex]::Escape($field)) "orchestrator task-card $field" }
-Test-NoText $orchestrator 'Fast|Standard|Strict|Exploratory|Direct|Focused|Open Research|CAPABILITY_MANIFEST|RUNTIME_POLICY|Write-ResearchRuntimeEvent' 'no public lanes or runtime framework'
+Test-NoText $orchestrator '\bFast\b|\bStandard\b|\bStrict\b(?!-)|\bExploratory\b|\bDirect\b|\bFocused\b|Open Research|CAPABILITY_MANIFEST|RUNTIME_POLICY|Write-ResearchRuntimeEvent' 'no public lanes or runtime framework'
 $qualityGate=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '06-quality-gate\SKILL.md')
 foreach($gate in @('L0','L1','L2')) { Test-Text $qualityGate ([regex]::Escape($gate)) "quality gate $gate" }
 Test-Text $qualityGate 'Sol 只做一次紧凑语义验收' 'compact Sol acceptance'
@@ -247,16 +278,33 @@ Test-Text $stagePlanning '不设置默认阶段数' 'no fixed stage count'
 Test-Text $stagePlanning '完整对话、全部项目状态、全部工具日志' 'bounded planning context'
 $suiteIndex=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot 'SKILL.md')
 $routingExamples=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot 'shared\ROUTING_EXAMPLES.md')
+$evals=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot 'evals\evals.json')|ConvertFrom-Json
+Test-Value ([string]$evals.runtime_assertions.support_agent_type) 'research_support' 'eval support agent type'
+Test-Value ([string]$evals.runtime_assertions.economy_agent_type) 'research_output' 'eval output agent type'
+Test-Value ([string]$evals.runtime_assertions.fork_turns) 'none' 'eval specialized fork mode'
+Test-Value ([string]$evals.runtime_assertions.preferred_call_shape) 'agent_type' 'eval preferred spawn call shape'
+Test-Value ([string]$evals.runtime_assertions.compatible_call_shape) 'explicit_model' 'eval compatible spawn call shape'
+Test-Value ([string]$evals.runtime_assertions.isolated_call_shape) 'codex_exec' 'eval isolated call shape'
+Test-Value ([bool]$evals.runtime_assertions.require_runtime_evidence) $true 'eval requires runtime evidence'
+Test-Value ([bool]$evals.runtime_assertions.require_spawn_evidence) $true 'eval requires spawn evidence'
+Test-Value ([bool]$evals.runtime_assertions.self_report_is_evidence) $false 'eval rejects self-report evidence'
 Test-Text $suiteIndex '一条统一科研流程' 'suite index unified workflow'
 Test-Text $routingExamples '同一流程' 'routing examples unified workflow'
-Test-NoText ($suiteIndex + $routingExamples) 'Fast|Standard|Strict|Exploratory|Direct|Focused|Open Research' 'index and examples have no public modes'
+Test-NoText ($suiteIndex + $routingExamples) '\bFast\b|\bStandard\b|\bStrict\b(?!-)|\bExploratory\b|\bDirect\b|\bFocused\b|Open Research' 'index and examples have no public modes'
 $qualityRubric=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot 'shared\QUALITY_RUBRIC.md')
 Test-Text $qualityRubric '完整历史、全部日志或整篇原文' 'quality rubric compact context'
 $launcherText=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot 'scripts\Start-ResearchAgent.ps1')
 Test-Text $launcherText '一条统一科研流程' 'launcher unified workflow'
 Test-Text $launcherText '(?s)Sol.*Terra.*Luna' 'launcher automatic model responsibilities'
 Test-Text $launcherText 'Worker 不互相转交' 'launcher single-hop boundary'
-Test-NoText $launcherText '\bFast\b|\bStandard\b|\bStrict\b|\bExploratory\b|\bDirect\b|\bFocused\b|Open Research|CAPABILITY_MANIFEST|RUNTIME_POLICY' 'launcher has no public modes or runtime framework'
+Test-Text $launcherText 'agent_type=research_support, fork_turns=none' 'launcher preferred Terra spawn instruction'
+Test-Text $launcherText 'agent_type=research_output, fork_turns=none' 'launcher preferred Luna spawn instruction'
+Test-Text $launcherText 'task_name=research_support, model=gpt-5\.6-terra, reasoning_effort=medium, fork_turns=none' 'launcher compatible Terra spawn instruction'
+Test-Text $launcherText 'task_name=research_output, model=gpt-5\.6-luna, reasoning_effort=low, fork_turns=none' 'launcher compatible Luna spawn instruction'
+Test-Text $launcherText 'codex --disable multi_agent exec --strict-config --ephemeral --ignore-user-config --json --color never --sandbox read-only' 'launcher isolated Codex instruction'
+Test-Text $launcherText '用 -m 和 model_reasoning_effort 锁定 Terra/Luna' 'launcher isolated model lock'
+Test-Text $launcherText '真实子线程、成功 spawn.*退出码为 0' 'launcher runtime evidence rule'
+Test-NoText $launcherText '\bFast\b|\bStandard\b|\bStrict\b(?!-)|\bExploratory\b|\bDirect\b|\bFocused\b|Open Research|CAPABILITY_MANIFEST|RUNTIME_POLICY' 'launcher has no public modes or runtime framework'
 
 $results | Format-Table -AutoSize
 $failures=@($results|Where-Object Status -eq 'FAIL').Count

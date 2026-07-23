@@ -418,8 +418,10 @@ function Get-NewPrompt {
 不要立即完成整个大型任务。
 运行一条统一科研流程；不要要求用户选择模型、Agent 或工作模式。
 Sol 负责需求、规划、拆解、方法、证据综合和关键科研判断。
-需要检索、网页查证、文件扫描、提取或证据表时，向 Terra 发送紧凑证据任务卡。
-需要成稿时，Sol 先锁定提纲、论点、证据编号和格式，再向 Luna 发送锁定写作包。
+需要检索、网页查证、文件扫描、提取或证据表且路由状态为 ready 时，必须创建专用 Worker：优先 spawn_agent(agent_type=research_support, fork_turns=none)；若工具不支持 agent_type，则使用 spawn_agent(task_name=research_support, model=gpt-5.6-terra, reasoning_effort=medium, fork_turns=none)。
+需要正式章节、多段成稿、表格、语言版本或格式化文本时，Sol 先锁定提纲、论点、证据编号和格式，再优先 spawn_agent(agent_type=research_output, fork_turns=none)；若工具不支持 agent_type，则使用 spawn_agent(task_name=research_output, model=gpt-5.6-luna, reasoning_effort=low, fork_turns=none)。
+角色形态由 TOML 锁定模型；显式模型形态只能使用 canonical 值并在任务卡中重申只读、禁止递归委派和紧凑交接。若 spawn 无法锁定目标模型，则用官方一次性 codex --disable multi_agent exec --strict-config --ephemeral --ignore-user-config --json --color never --sandbox read-only，并用 -m 和 model_reasoning_effort 锁定 Terra/Luna；只传紧凑任务卡，完成即退出。真实子线程、成功 spawn，或退出码为 0 且返回合规交接包的一次性调用才算运行证据。
+三种调用形态都不可用、模型不可用或一次合规调用失败时标记 degraded_sol_only，由 Sol 完成当前有界任务并透明说明；不得假称已经调用 Terra/Luna。
 只有真实依赖才创建阶段；Worker 不互相转交，不接收完整历史、全部日志或整篇原文。
 投稿、关键参数、核心方法和最终科学结论由 Sol 做一次紧凑语义验收，不重新写全文。
 '@

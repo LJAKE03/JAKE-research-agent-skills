@@ -86,7 +86,7 @@ flowchart LR
 
 Windows Codex 应用通过以下文件自动路由：
 
-- `.codex/config.toml`：限制 `max_threads=2`、`max_depth=1`；
+- `.codex/config.toml`：固定 Sol/`xhigh`、启用 multi-agent、注册 Terra/Luna 角色，并限制 `max_threads=2`、`max_depth=1`；
 - `.codex/agents/research-support.toml`：Terra 只读证据 Worker；
 - `.codex/agents/research-output.toml`：Luna 只读写作 Worker；
 - `shared/MODEL_ROUTING.json`：唯一 canonical 模型映射。
