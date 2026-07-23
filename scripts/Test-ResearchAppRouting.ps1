@@ -52,8 +52,9 @@ if (Test-Path -LiteralPath $routingJsonPath) {
     Test-Value ([int]$routing.delegation.max_threads) 2 'routing JSON concurrency cap'
     Test-Value ([int]$routing.delegation.max_depth) 1 'routing JSON nesting cap'
     Test-Value ([bool]$routing.delegation.subagents_may_delegate) $false 'routing JSON nesting boundary'
-    Test-Value ([string]$routing.routing_mode.default) 'balanced' 'routing JSON default mode'
-    Test-Value ([int]$routing.routing_mode.max_initial_blocking_questions) 2 'routing JSON blocking-question cap'
+    Test-Value ([string]$routing.workflow.default) 'unified' 'routing JSON unified workflow'
+    Test-Value ([int]$routing.workflow.max_initial_blocking_questions) 2 'routing JSON blocking-question cap'
+    Test-Value (@($routing.workflow.sol_semantic_acceptance_when)-join ',') 'publication_or_submission,key_parameter_or_core_method,safety_or_high_cost_decision,scientific_final_acceptance' 'routing JSON Sol acceptance triggers'
   }
   catch { Add-Result FAIL 'routing JSON parse' $_.Exception.Message }
 } else { Add-Result FAIL 'routing JSON' 'missing' }
@@ -73,6 +74,36 @@ if(Test-Path -LiteralPath $routingSchemaPath -PathType Leaf){
     else{Add-Result FAIL 'routing JSON Schema validation' ($schemaOutput -join '; ')}
   }
 }else{Add-Result FAIL 'routing JSON schema' 'missing'}
+
+$handoffSchemaPath = Join-Path $SourceRoot 'shared\STAGE_HANDOFF.schema.json'
+$handoffExamplePath = Join-Path $SourceRoot 'shared\STAGE_HANDOFF.example.json'
+foreach($contract in @(
+  @{ Schema=$handoffSchemaPath; Instance=$handoffExamplePath; Label='research handoff' }
+)) {
+  if(-not(Test-Path -LiteralPath $contract.Schema -PathType Leaf) -or -not(Test-Path -LiteralPath $contract.Instance -PathType Leaf)) {
+    Add-Result FAIL "$($contract.Label) Schema validation" 'schema or instance missing'
+    continue
+  }
+  try {
+    $contractSchema=Get-Content -Raw -Encoding UTF8 -LiteralPath $contract.Schema|ConvertFrom-Json
+    Test-Value ([string]$contractSchema.'$schema') 'https://json-schema.org/draft/2020-12/schema' "$($contract.Label) schema declaration"
+  } catch { Add-Result FAIL "$($contract.Label) schema parse" $_.Exception.Message }
+  $contractPython=Get-Command python -ErrorAction SilentlyContinue
+  if($null -eq $contractPython -or -not(Test-Path -LiteralPath $schemaValidatorPath -PathType Leaf)) {
+    Add-Result $unverifiedStatus "$($contract.Label) Schema validation" 'python/jsonschema validator unavailable'
+  } else {
+    $contractOutput=@(& $contractPython.Source $schemaValidatorPath $contract.Schema $contract.Instance 2>&1)
+    $contractExit=$LASTEXITCODE
+    if($contractExit -eq 0){Add-Result PASS "$($contract.Label) Schema validation" ($contractOutput -join '; ')}
+    elseif($contractExit -eq 3 -and $AllowUnverifiedModelCatalog){Add-Result WARN "$($contract.Label) Schema validation" ($contractOutput -join '; ')}
+    else{Add-Result FAIL "$($contract.Label) Schema validation" ($contractOutput -join '; ')}
+  }
+}
+
+$handoffTemplate=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot 'shared\STAGE_HANDOFF.template.md')
+foreach($field in @('objective','input_locators','locked_decisions','output_contract','acceptance_checks','stop_conditions','handoff_type','summary','deliverable','evidence_locations','uncertainties','changed_files','next_action')) {
+  Test-Text $handoffTemplate ([regex]::Escape($field)) "handoff template $field"
+}
 
 $routingMarkdownPath = Join-Path $SourceRoot 'shared\MODEL_ROUTING.md'
 if (Test-Path -LiteralPath $routingMarkdownPath) {
@@ -110,6 +141,8 @@ foreach($templateAgent in @(
   Test-Text $templateAgentText (('(?m)^model\s*=\s*"{0}"\s*$' -f [regex]::Escape($tierExpected.model))) "template $($templateAgent.file) model"
   Test-Text $templateAgentText (('(?m)^model_reasoning_effort\s*=\s*"{0}"\s*$' -f [regex]::Escape($tierExpected.effort))) "template $($templateAgent.file) reasoning"
   Test-Text $templateAgentText '(?m)^sandbox_mode\s*=\s*"read-only"\s*$' "template $($templateAgent.file) read-only"
+  foreach($field in @('handoff_type','summary','deliverable','evidence_locations','uncertainties','changed_files','next_action')) { Test-Text $templateAgentText ([regex]::Escape($field)) "template $($templateAgent.file) handoff $field" }
+  Test-Text $templateAgentText 'Do not contact another worker' "template $($templateAgent.file) single-hop return"
 }
 
 $managedRoutingPath = Join-Path $SourceRoot 'project-template\.research-agent\MODEL_ROUTING.json'
@@ -121,7 +154,7 @@ if (Test-Path -LiteralPath $managedRoutingPath) {
 
 $templateAgentsPath = Join-Path $SourceRoot 'project-template\AGENTS.md'
 $templateAgentsText = Get-Content -Raw -Encoding UTF8 -LiteralPath $templateAgentsPath
-foreach($token in @('research-agent-routing:start','research-agent-routing:end','Codex','PowerShell','Python','`rg`','`git diff`')) { Test-Text $templateAgentsText ([regex]::Escape($token)) "template AGENTS $token" }
+foreach($token in @('research-agent-routing:start','research-agent-routing:end','Sol','Terra','Luna','PowerShell','Python','`rg`','`git diff`','Get-Content -Encoding UTF8','紧凑交接 Schema')) { Test-Text $templateAgentsText ([regex]::Escape($token)) "template AGENTS $token" }
 
 foreach($skillName in @('00-research-orchestrator','01-requirement-elicitation','02-research-reconnaissance','03-stage-planning-execution','04-literature-review','05-academic-writing','06-quality-gate')) {
   $skillText = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot "$skillName\SKILL.md")
@@ -175,20 +208,55 @@ foreach($agentName in @('research-support','research-output')) {
     $model=$Matches[1]
     Add-Result $(if($available.Count -eq 0){$unverifiedStatus}elseif($model -in $available){'PASS'}else{'FAIL'}) "$agentName model availability" $model
   } else { Add-Result FAIL "$agentName model" 'missing' }
-  if($agentName -eq 'research-support') { Test-Text $text 'must not select a research direction' 'support judgement boundary'; Test-Text $text 'Do not edit\s+files' 'support edit boundary' }
-  else { Test-Text $text 'Never introduce a fact' 'output no-new-facts boundary'; Test-Text $text 'Do not edit\s+files' 'output edit boundary'; Test-Text $text 'Mark uncertainty as' 'output uncertainty boundary' }
+  foreach($field in @('handoff_type','summary','deliverable','evidence_locations','uncertainties','changed_files','next_action')) { Test-Text $text ([regex]::Escape($field)) "$agentName handoff $field" }
+  Test-Text $text 'Do not contact another worker' "$agentName single-hop return"
+  if($agentName -eq 'research-support') {
+    Test-Text $text 'must not select the research direction' 'support judgement boundary'
+    Test-Text $text 'evidence table' 'support evidence-table responsibility'
+    Test-Text $text 'Do not edit files' 'support edit boundary'
+  }
+  else {
+    Test-Text $text 'locked writing package' 'output locked-package boundary'
+    Test-Text $text 'Generate coherent prose' 'output drafting responsibility'
+    Test-Text $text 'Never introduce a new fact' 'output no-new-facts boundary'
+    Test-Text $text 'Do not edit files' 'output edit boundary'
+  }
 }
 
 $orchestrator=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '00-research-orchestrator\SKILL.md')
-Test-Text $orchestrator '\| A .*strategic' 'strategic routing'
-Test-Text $orchestrator '\| B .*support' 'support routing'
-Test-Text $orchestrator '\| C .*economy' 'economy routing'
-Test-Text $orchestrator 'D .*strategic.*B/C.*strategic' 'mixed-task routing'
+Test-Text $orchestrator '一条连续科研流程' 'single research workflow'
+Test-Text $orchestrator 'Sol 理解需求.*选择方法' 'Sol strategic responsibility'
+Test-Text $orchestrator 'Terra.*检索、查证、扫描、提取和证据表' 'Terra evidence responsibility'
+Test-Text $orchestrator 'Luna.*锁定写作包.*生成文本' 'Luna drafting responsibility'
+Test-Text $orchestrator '用户不需要选择模型、Agent 或工作模式' 'automatic user-facing routing'
 Test-Text $orchestrator 'PowerShell' 'PowerShell boundary'
 Test-Text $orchestrator 'Python' 'Python boundary'
 Test-Text $orchestrator '`rg`/`rg --files`' 'native search boundary'
 Test-Text $orchestrator '`git diff`' 'Git inspection boundary'
 Test-Text $orchestrator 'Large results must be written to files\.' 'output control'
+Test-Text $orchestrator 'STAGE_HANDOFF\.schema\.json' 'compact handoff schema reference'
+foreach($field in @('objective','input_locators','locked_decisions','output_contract','acceptance_checks','stop_conditions')) { Test-Text $orchestrator ([regex]::Escape($field)) "orchestrator task-card $field" }
+Test-NoText $orchestrator 'Fast|Standard|Strict|Exploratory|Direct|Focused|Open Research|CAPABILITY_MANIFEST|RUNTIME_POLICY|Write-ResearchRuntimeEvent' 'no public lanes or runtime framework'
+$qualityGate=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '06-quality-gate\SKILL.md')
+foreach($gate in @('L0','L1','L2')) { Test-Text $qualityGate ([regex]::Escape($gate)) "quality gate $gate" }
+Test-Text $qualityGate 'Sol 只做一次紧凑语义验收' 'compact Sol acceptance'
+Test-Text $qualityGate '不新增独立 Reviewer Agent' 'quality gate no extra reviewer'
+$stagePlanning=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '03-stage-planning-execution\SKILL.md')
+Test-Text $stagePlanning '真实依赖' 'dependency-driven planning'
+Test-Text $stagePlanning '不设置默认阶段数' 'no fixed stage count'
+Test-Text $stagePlanning '完整对话、全部项目状态、全部工具日志' 'bounded planning context'
+$suiteIndex=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot 'SKILL.md')
+$routingExamples=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot 'shared\ROUTING_EXAMPLES.md')
+Test-Text $suiteIndex '一条统一科研流程' 'suite index unified workflow'
+Test-Text $routingExamples '同一流程' 'routing examples unified workflow'
+Test-NoText ($suiteIndex + $routingExamples) 'Fast|Standard|Strict|Exploratory|Direct|Focused|Open Research' 'index and examples have no public modes'
+$qualityRubric=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot 'shared\QUALITY_RUBRIC.md')
+Test-Text $qualityRubric '完整历史、全部日志或整篇原文' 'quality rubric compact context'
+$launcherText=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot 'scripts\Start-ResearchAgent.ps1')
+Test-Text $launcherText '一条统一科研流程' 'launcher unified workflow'
+Test-Text $launcherText '(?s)Sol.*Terra.*Luna' 'launcher automatic model responsibilities'
+Test-Text $launcherText 'Worker 不互相转交' 'launcher single-hop boundary'
+Test-NoText $launcherText '\bFast\b|\bStandard\b|\bStrict\b|\bExploratory\b|\bDirect\b|\bFocused\b|Open Research|CAPABILITY_MANIFEST|RUNTIME_POLICY' 'launcher has no public modes or runtime framework'
 
 $results | Format-Table -AutoSize
 $failures=@($results|Where-Object Status -eq 'FAIL').Count

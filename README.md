@@ -1,122 +1,128 @@
-# 科研 Agent Skills 协同套件 v2.1
+# 科研工作流 Skills 集成包
 
-本套件不是若干彼此独立的提示词，而是一套由**总控 Skill 统一编排、功能 Skill 分阶段执行、质量门 Skill 回收验收**的科研工作系统。
+本仓库提供一条统一科研流程，由总控自动选择功能 Skills 和 Sol/Terra/Luna 责任。它不是独立 AI-Agent Runtime，也不要求用户选择模型、Agent 或工作模式。
 
-## 一、核心架构
+## 核心流程
 
 ```mermaid
-flowchart TD
-    U[用户提出科研任务] --> O[00 总控编排]
-    O --> I[01 需求澄清与关键信息索取]
-    I --> O
-    O --> R[02 外部检索、案例学习与证据构建]
-    R --> O
-    O --> P[03 课题拆解、阶段计划与分步执行]
-    P --> O
-    O --> L[04 文献综述与研究现状综合]
-    L --> O
-    O --> W[05 SCI论文与技术报告写作]
-    W --> O
-    O --> Q[06 质量校核与阶段门]
-    Q --> H{高影响检查点?}
-    H -->|否，连续执行| O
-    H -->|是| D{用户检查/决策}
-    D -->|通过| O
-    D -->|修改| O
-    D -->|暂停或改向| O
+flowchart LR
+    U["用户科研任务"] --> S1["Sol：理解、规划、方法与拆解"]
+    S1 -->|需要证据| T["Terra：检索、查证、扫描、提取、证据表"]
+    T --> S2["Sol：证据综合并锁定论点/方法/提纲"]
+    S1 -->|证据已充分| S2
+    S2 -->|需要文本| L["Luna：按锁定写作包生成文本与格式"]
+    L --> A["Sol：必要时做紧凑语义验收"]
+    S2 -->|非写作交付| A
+    A --> U
 ```
 
-总控 Skill 是唯一默认入口和阶段返回点。功能 Skill 不自行把项目推进到底，每完成一个阶段都必须提交统一的“阶段交接包”，再由总控调用质量门进行检查。
+| 模型 | 自动责任 | 明确边界 |
+|---|---|---|
+| GPT-5.6 Sol | 需求、总体规划、任务拆解、方法、证据综合、关键判断、最终答复 | 不把最终科研责任委派出去 |
+| GPT-5.6 Terra | 文献检索、网页查证、文件扫描、信息提取、证据表和来源完整性 | 不决定研究方向、方法、参数、来源可靠性或最终结论 |
+| GPT-5.6 Luna | 根据锁定提纲、论点、证据编号和格式要求生成文本、语言和格式 | 不新增事实、引用、公式、因果关系或科研判断 |
 
-## 二、目录说明
+## 功能 Skills
 
-| 目录 | 功能 |
-|---|---|
-| `00-research-orchestrator` | 接收任务、管理状态、拆解分工、调用其他 Skill、组织用户验收 |
-| `01-requirement-elicitation` | 主动提问、索要关键信息、减少错误假设 |
-| `02-research-reconnaissance` | 联网检索、学习相似项目、建立证据链、提炼可迁移做法 |
-| `03-stage-planning-execution` | 根据任务复杂度和风险动态拆分阶段，并控制一次只完成一个可验收工作包 |
-| `04-literature-review` | 文献检索策略、文献矩阵、主题综合、研究缺口与综述写作 |
-| `05-academic-writing` | SCI 小论文、课程论文、技术报告、项目总结等成果写作 |
-| `06-quality-gate` | 独立审查、阶段评分、问题分级、通过/返工/阻断决策 |
-| `shared` | 项目状态、交接包、质量标准、路由案例等公共模板 |
-| `evals` | 用于测试整套 Skill 是否按预期触发和协同的案例 |
+- `00-research-orchestrator`：统一入口、自动路由和最终综合；
+- `01-requirement-elicitation`：高影响需求、边界和成功标准；
+- `02-research-reconnaissance`：外部检索、资料查证和模式学习；
+- `03-stage-planning-execution`：仅在真实依赖存在时形成紧凑任务卡；
+- `04-literature-review`：文献矩阵、主题综合和研究缺口；
+- `05-academic-writing`：基于锁定论点和证据包完成科研写作；
+- `06-quality-gate`：确定性、证据完整性和 Sol 语义验收。
 
-## 三、推荐用法
+## 紧凑上下文
 
-### 1. 新任务必须从总控开始
+模型之间不复制完整对话、全部项目历史、全部工具日志或整篇论文原文。
 
-可直接输入：
+### Sol → Terra
 
-> 调用科研项目总控 Skill。我要完成【任务】。先检查已有信息、主动检索能够自行查明的内容，只询问真正阻断执行的关键信息；随后按复杂度、风险、交付物和验证需求动态拆分并执行。低风险、可逆工作通过所需质量门后连续推进，直到高影响决策、证据不足或不可逆操作前再让我确认。
+- 当前唯一目标；
+- 输入文件、页面、URL 或数据表定位；
+- 已锁定边界；
+- 证据表字段和来源要求；
+- 验收与停止条件。
 
-### 2. 默认运行模式
+### Terra → Sol
 
-- **平衡快速模式（默认）**：先判断风险，首轮只问 0–2 个阻断问题；低风险工作包可连续执行，到高影响决策、证据不足或不可逆操作前再请用户确认。
-- **简单任务快车道**：单一、低风险、无需外部证据的任务直接完成，不创建多余阶段或完整项目状态。
-- **严格模式**：建立完整检索记录、证据矩阵和 L2 科学质量门；适用于 SCI 投稿、项目申报、安全、高成本决策和最终科研结论。
+- 证据表或提取结果；
+- 来源定位和元数据；
+- 可观察事实摘要；
+- 冲突、缺口和不确定项。
 
-### 3. 中断后恢复
+### Sol → Luna
 
-把 `shared/PROJECT_STATE.template.md` 的最新内容交给总控，并说明：
+- 目标章节或交付物；
+- 锁定提纲和论点顺序；
+- 允许使用的事实、数据、公式和引用编号；
+- 风格、语言、长度和格式；
+- 禁止新增项与占位符规则。
 
-> 根据该项目状态恢复任务。先核对已完成内容和未决问题，不要重复已完成工作。
+### Luna → Sol
 
-## 四、协同原则
+- 完整草稿或格式结果；
+- 占位符和不确定项；
+- 使用的证据定位；
+- 建议 Sol 检查的下一动作。
 
-1. **能检索的不问用户**：公开事实、标准、论文方法和相似案例先自行搜索。
-2. **必须由用户决定的才提问**：研究边界、目标期刊、核心偏好、是否采用某项技术路线。
-3. **不一口气完成大任务**：一次只处理一个有明确输入、输出和验收标准的工作包。
-4. **证据与推断分开**：明确区分资料事实、模型推断、工程建议和用户决策。
-5. **每阶段必须回总控**：功能 Skill 不得自行跨越质量门。
-6. **按需加载**：总控只加载当前需要的 Skill 和参考文件，避免反复灌入完整上下文。
-7. **形成可追溯状态**：重要决策、参数来源、假设、版本和待办必须写入项目状态。
-8. **不伪造**：不得编造文献、参数、数据、仿真结果、标准条款或已完成的操作。
+交接结构见 `shared/STAGE_HANDOFF.template.md` 和 `shared/STAGE_HANDOFF.schema.json`。
 
-## 五、推荐安装结构
+## 质量检查
 
-```text
-research-agent-skills/
-├── AGENTS.md
-├── README.md
-├── SKILL.md
-├── 00-research-orchestrator/SKILL.md
-├── 01-requirement-elicitation/SKILL.md
-├── 02-research-reconnaissance/SKILL.md
-├── 03-stage-planning-execution/SKILL.md
-├── 04-literature-review/SKILL.md
-├── 05-academic-writing/SKILL.md
-├── 06-quality-gate/SKILL.md
-├── shared/
-│   ├── PROJECT_STATE.template.md
-│   ├── STAGE_HANDOFF.template.md
-│   ├── QUALITY_RUBRIC.md
-│   └── ROUTING_EXAMPLES.md
-└── evals/evals.json
-```
+检查强度由总控内部自动选择：
 
-## 六、版本说明
+- L0：语法、Schema、哈希、文件、单位和确定性测试；
+- L1：Terra 核对来源定位、字段完整性、证据覆盖、遗漏和冲突；
+- L2：Sol 裁决来源可靠性、方法、参数、解释和科学结论。
 
-v2.0 建立了“1 个总控 + 6 个功能 Skill”、阶段交接、项目状态和质量门架构；v2.1 重点更新：
+投稿/申报、安全或高成本、关键参数、核心方法和最终科学结论自动执行 L2。Sol 只做一次紧凑验收，不重新写全文。
 
-- 路由冲突和 Sol/模型目录不可验证均 fail-closed；仅 `ready`，或 Sol 已验证且明确为 `degraded_sol_only`，并且无冲突、快照哈希一致时才能启动。
-- `shared/MODEL_ROUTING.json` 成为唯一配置源；项目模板仅保留字节一致的生成快照。
-- 默认采用平衡快速模式和 L0/L1/L2 分层质量门，减少低风险任务的重复上下文。
-- 修复复制模式同步和 ZIP 备份的通配符问题，并增加实际文件内容、降级和阻断回归测试。
-## 应用版模型与工具路由
+## 何时分阶段
 
-Windows 版 ChatGPT 桌面应用是本项目的主要入口。项目用 `.codex/config.toml` 限制子代理并发/深度，并用 `.codex/agents/research-support.toml` 与 `.codex/agents/research-output.toml` 定义支持和低风险输出代理。`shared/MODEL_ROUTING.json` 是唯一 canonical 配置源，项目模板快照必须与它字节一致；实际模型映射、回退条件、工具边界和自检命令见 `shared/MODEL_ROUTING.md`。CMD/PowerShell 启动器负责 canonical、快照哈希和本地模型目录预检；实际任务分派仍由应用版项目级路由执行。
+只有后续工作确实依赖当前证据、数据、参数、用户决定或实验/仿真结果时才创建阶段。简单问答、一次官网核验、已锁定内容写作和单一文件修改不制造项目计划。
 
-## 验证与 Token 控制
+## 项目级模型路由
 
-日常静态检查不调用 Agent，因此不产生模型 Token：
+Windows Codex 应用通过以下文件自动路由：
+
+- `.codex/config.toml`：限制 `max_threads=2`、`max_depth=1`；
+- `.codex/agents/research-support.toml`：Terra 只读证据 Worker；
+- `.codex/agents/research-output.toml`：Luna 只读写作 Worker；
+- `shared/MODEL_ROUTING.json`：唯一 canonical 模型映射。
+
+Worker 不递归委派，也不互相转交。Terra/Luna 不可用时进入 Sol-only，不替换为未经验证的模型。
+
+## 使用
+
+在科研项目中调用：
+
+> 调用科研项目总控 Skill。请按统一科研流程处理【任务】。只询问真正阻断且必须由我决定的问题；是否检索、调用哪个功能 Skill、是否分阶段和是否需要严格验收由总控自动判断。
+
+项目模板可由：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-ResearchSkills.ps1 -AllowUnverifiedModelCatalog
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\New-ResearchProject.ps1
 ```
 
-发布前严格检查省略离线开关；此时无法读取 `codex debug models`，或缺少 Python `jsonschema` 而无法执行 Draft 2020-12 Schema 验证，都会直接失败，避免假绿。真实 strategic/support/economy/mixed 性能评测应单独按需运行并记录路由、模型、首响、总耗时、输入/输出 Token 和质量评分；在获得基线数据前，不宣称具体节省比例。
+创建。项目特殊规则写入 `PROJECT_OVERRIDES.md`，不要修改公共 Skill。
 
-## 关于 GitHub 的“主要语言”
+## 验证
 
-[GitHub Linguist](https://docs.github.com/zh/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-repository-languages) 通常不把 Markdown 文档当作可统计的编程语言，因此仓库会显示 PowerShell 为主要语言。这是合理结果：Skills 的业务逻辑主要写在 Markdown/JSON 中，PowerShell 是 Windows 安装、启动、同步和回归测试层。项目不通过 `.gitattributes` 人为改写语言占比，避免误导。
+最小应用路由检查：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-ResearchAppRouting.ps1 -AllowUnverifiedModelCatalog
+```
+
+全量静态与集成检查：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-ResearchSkills.ps1
+```
+
+离线检查可以显式使用 `-AllowUnverifiedModelCatalog`；正式发布验收不得使用该开关。
+
+## 版本状态
+
+`VERSION` 仍保持 `2.1.0`。统一工作流重构当前位于 Unreleased，尚未打 `v2.2.0` 标签。早期 WP5 A/B 未证明旧的多路线/Runtime 方案有质量或效率收益，因此只保留精简诊断记录，不作为发布依据。

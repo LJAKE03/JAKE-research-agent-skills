@@ -60,18 +60,26 @@ try {
     $evalDocument = Get-Content -Encoding UTF8 -Raw -LiteralPath $evalPath | ConvertFrom-Json
     $evalCases = @($evalDocument.evals)
     if($evalCases.Count -eq 0){throw 'evals array is empty'}
-    $validRoutes = @('strategic','support','economy','mixed')
     $validRisks = @('low','medium','high')
+    $validWorkers = @('terra','luna')
+    $validReviews = @('deterministic','terra_provenance','sol_semantic')
     foreach($case in $evalCases){
         if([int]$case.id -lt 1 -or [string]::IsNullOrWhiteSpace([string]$case.prompt)){throw "eval case has invalid id or prompt: $($case.id)"}
-        if([string]$case.expected_route -notin $validRoutes){throw "eval $($case.id) has invalid expected_route"}
         if([string]$case.risk_level -notin $validRisks){throw "eval $($case.id) has invalid risk_level"}
+        $caseWorkers=@($case.expected_workers|ForEach-Object{[string]$_})
+        if(@($caseWorkers|Where-Object{$_ -notin $validWorkers}).Count -gt 0 -or @($caseWorkers|Sort-Object -Unique).Count -ne $caseWorkers.Count){throw "eval $($case.id) has invalid expected_workers"}
+        if([string]$case.expected_review -notin $validReviews){throw "eval $($case.id) has invalid expected_review"}
+        if($case.requires_stage_plan -isnot [bool]){throw "eval $($case.id) has invalid requires_stage_plan"}
         if(@($case.expected_behavior).Count -eq 0){throw "eval $($case.id) has no expected_behavior"}
     }
-    $coveredRoutes=@($evalCases|ForEach-Object {[string]$_.expected_route}|Sort-Object -Unique)
-    $missingRoutes=@($validRoutes|Where-Object {$_ -notin $coveredRoutes})
-    if($missingRoutes.Count -gt 0){throw "missing route coverage: $($missingRoutes -join ', ')"}
-    Add-Result PASS 'evals.json contract' "$($evalCases.Count) cases; routes=$($coveredRoutes -join ',')"
+    $coveredWorkers=@($evalCases|ForEach-Object {@($_.expected_workers|ForEach-Object{[string]$_})}|Sort-Object -Unique)
+    $missingWorkers=@($validWorkers|Where-Object {$_ -notin $coveredWorkers})
+    if($missingWorkers.Count -gt 0){throw "missing worker coverage: $($missingWorkers -join ', ')"}
+    if(@($evalCases|Where-Object {@($_.expected_workers).Count -eq 0}).Count -eq 0){throw 'missing direct Sol coverage'}
+    $coveredReviews=@($evalCases|ForEach-Object {[string]$_.expected_review}|Sort-Object -Unique)
+    $missingReviews=@($validReviews|Where-Object {$_ -notin $coveredReviews})
+    if($missingReviews.Count -gt 0){throw "missing review coverage: $($missingReviews -join ', ')"}
+    Add-Result PASS 'evals.json contract' "$($evalCases.Count) cases; workers=direct-sol,$($coveredWorkers -join ','); reviews=$($coveredReviews -join ',')"
 }
 catch {
     Add-Result FAIL 'evals.json contract' $_.Exception.Message
@@ -80,6 +88,8 @@ catch {
 foreach ($relativePath in @(
     'shared\PROJECT_STATE.template.md',
     'shared\STAGE_HANDOFF.template.md',
+    'shared\STAGE_HANDOFF.schema.json',
+    'shared\STAGE_HANDOFF.example.json',
     'shared\QUALITY_RUBRIC.md',
     'shared\ROUTING_EXAMPLES.md',
     'shared\MODEL_ROUTING.schema.json'
@@ -121,6 +131,30 @@ function Write-Report {
     [IO.File]::WriteAllLines($ReportPath, $report, (New-Object Text.UTF8Encoding($true)))
     $rows | Format-Table -AutoSize
     Write-Output "REPORT $ReportPath"
+}
+$encodingTest = Join-Path $PSScriptRoot 'Test-ResearchEncoding.ps1'
+$encodingOutput = @(& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $encodingTest -SourceRoot $SourceRoot)
+$encodingExit = $LASTEXITCODE
+if ($encodingExit -eq 0) {
+    Add-Result PASS 'PowerShell 5.1 UTF-8 regression' ($encodingOutput | Select-Object -Last 1)
+}
+else {
+    Add-Result FAIL 'PowerShell 5.1 UTF-8 regression' (($encodingOutput | Select-Object -Last 5) -join '; ')
+}
+
+$pwsh = Get-Command pwsh -ErrorAction SilentlyContinue
+if ($null -eq $pwsh) {
+    Add-Result SKIP 'PowerShell 7 UTF-8 regression' 'pwsh unavailable'
+}
+else {
+    $pwshEncodingOutput = @(& $pwsh.Source -NoProfile -File $encodingTest -SourceRoot $SourceRoot)
+    $pwshEncodingExit = $LASTEXITCODE
+    if ($pwshEncodingExit -eq 0) {
+        Add-Result PASS 'PowerShell 7 UTF-8 regression' ($pwshEncodingOutput | Select-Object -Last 1)
+    }
+    else {
+        Add-Result FAIL 'PowerShell 7 UTF-8 regression' (($pwshEncodingOutput | Select-Object -Last 5) -join '; ')
+    }
 }
 if (@($rows | Where-Object Status -eq 'FAIL').Count -gt 0) { Write-Report; exit 1 }
 

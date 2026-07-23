@@ -1,152 +1,79 @@
 ---
 name: staged-research-planning-and-execution
-description: Use after the task contract and initial evidence are available, or whenever a research project is too large to complete safely in one response. It dynamically decomposes the work into an appropriate number of dependent, testable stages; creates one task card at a time; defines inputs, outputs, acceptance criteria, risks, user checkpoints, and the next skill; controls scope and token use; executes only the active work package; and returns a stage handoff to the orchestrator instead of continuing automatically.
+description: Use only when a research task has genuine dependencies that cannot be completed safely as one bounded delivery. Sol creates the smallest useful sequence of work packages, activates one core package at a time, sends compact task cards instead of project history, updates state only when persistence matters, and returns every result to the orchestrator for verification and the next decision.
 ---
 
-# 课题拆解、阶段计划与分步执行
+# 真实依赖驱动的阶段计划与执行
 
 <!-- routing-preflight:required -->
-执行前确认总控已加载 `../shared/MODEL_ROUTING.json`；如未加载，先返回 `../00-research-orchestrator/SKILL.md`，不得直接执行。本 Skill 只引用共享规则，不复制其全文。
+执行前确认总控已加载 `../shared/MODEL_ROUTING.json`。本 Skill 只处理阶段依赖，不定义模型模式、能力层或独立 Runtime。
 
-## 1. 目标
+## 1. 何时调用
 
-把“完成一个项目”改造成“连续完成若干可验证工作包”。每个阶段都必须对总目标产生明确贡献，并能独立验收。
+仅在至少满足一项时调用：
 
-## 2. 拆解原则
+- 后续方法必须等待证据、数据、参数或用户决定；
+- 实验、仿真、分析、解释和写作存在不可交换的先后关系；
+- 当前结果可能改变后续路线；
+- 多个交付物共享关键输入，错误会造成明显返工。
 
-一个高质量阶段应满足：
+单一输出、一次查证、简单文件修改或已锁定内容的写作不创建阶段计划。
 
-- 只回答一个核心问题；
-- 有明确输入；
-- 有可观察输出；
-- 有验收标准；
-- 有依赖和停止条件；
-- 可在当前轮次内完成；
-- 失败时不会推翻全部项目；
-- 输出可直接交给下一阶段使用。
+## 2. Sol 的拆解原则
 
-## 3. 动态确定阶段数量
+- 只按真实依赖拆分，不设置默认阶段数；
+- 每个阶段回答一个核心问题并产生一个可验收主交付物；
+- 一次只激活一个核心工作包；
+- 独立、只读且输出互不冲突的支持任务才可并行；
+- 新证据改变前提时可以合并、重排、取消或重写后续阶段；
+- 用户只在范围、路线、关键参数、提纲、核心论点或最终版本等高影响节点确认。
 
-阶段数量不设固定上下限。总控应根据任务复杂度、技术和安全风险、交付物数量及类型、证据和外部核验需求、子任务依赖关系、实验/仿真/代码/文献/多轮验证需求、用户检查点和质量门数量，以及项目恢复与交接需求，动态确定阶段数量。简单任务可以少于 3 个阶段，常规复杂任务通常可采用 3–5 个阶段，高复杂度、高风险或多交付物任务可以超过 5 个阶段。不得为了满足阶段数量而人为拆分或合并任务；阶段数量属于规划结果，不属于预先固定的治理规则。
+## 3. 最小计划
 
-执行过程中如出现新的证据、风险或范围变化，可以重新拆分、合并、增加或取消阶段，并同步更新项目状态文件。
+计划只需记录：
 
-常见科研项目结构：
+| WP | 核心问题 | 依赖 | 交付物 | 验收条件 | 用户检查点 |
+|---|---|---|---|---|---|
 
-1. 任务定义与证据准备；
-2. 方法/模型/方案设计；
-3. 数据、实验、仿真或分析执行；
-4. 结果解释与论证；
-5. 论文、报告或最终交付。
+只有需要跨轮恢复或审计时才把计划写入 `PROJECT_STATE.md`。不为常规进度维护完整状态。
 
-不得将“完成全部仿真并写完整论文”作为单一阶段。
+## 4. 活动任务卡
 
-## 4. 依赖检查
+Sol 向功能 Skill、Terra 或 Luna 发送以下紧凑任务卡：
 
-拆解前检查：
-
-- 研究问题是否明确；
-- 关键参数和数据是否存在；
-- 外部证据是否足以选择方法；
-- 用户是否确认范围和技术路线；
-- 当前工具能否执行；
-- 是否存在合规、安全或知识产权限制。
-
-若前置条件不满足，返回总控补充，不要强行执行。
-
-### 规划示例
-
-- 简单文件格式修复：可规划为 1–2 个阶段；
-- 常规文献调查：通常可采用 3–5 个阶段；
-- 多物理场建模、实验和论文交付项目：可以规划为 6 个或更多阶段。
-
-这些是可行示例而非固定模板，最终数量仍由前述评估结果决定。
-
-### 阶段数评估
-
-总控在确定阶段数前至少评估：
-
-- `complexity`：任务复杂度；
-- `risk`：技术、安全和合规风险；
-- `deliverables`：交付物数量及类型；
-- `evidence`：证据、外部检索和核验需求；
-- `dependencies`：子任务依赖关系；
-- `validation`：实验、仿真、代码、文献或多轮验证强度。
-
-项目计划或 `PROJECT_STATE.md` 必须记录当前规划的阶段数量、确定依据、是否允许后续调整，以及阶段拆分/合并/增加/取消的变更原因。
-
-## 5. 阶段计划表
-
-```markdown
-| WP | 核心问题 | 输入 | 主任务 | 输出 | 验收标准 | 调用 Skill | 用户检查 |
-|---|---|---|---|---|---|---|---|
+```text
+objective: 当前唯一目标
+input_locators: 必要文件、页码、URL、数据表或摘要定位
+locked_decisions: 已确认且不得改变的范围、方法、参数、论点或术语
+output_contract: 预期表格、字段、草稿或文件
+acceptance_checks: 可观察的验收条件
+stop_conditions: 缺证据、冲突、越界或高风险时停止
 ```
 
-每个工作包还需标记：依赖、风险、允许假设、停止条件、对总目标的贡献。每个阶段至少记录阶段编号和名称、目标、输入、方法、输出、停止条件、质量门，以及与前后阶段的依赖关系。
+不发送完整对话、全部项目状态、全部工具日志或可通过定位读取的原始材料。
 
-## 6. 单阶段任务卡
+## 5. 执行与停止
 
-一次只激活一个任务卡：
+执行当前任务卡，发现以下情况立即返回总控：
 
-```markdown
-# Active Work Package
-
-## 基本信息
-- 项目：
-- WP 编号：
-- 核心问题：
-- 本轮边界：
-
-## 输入
-- 已确认资料：
-- 关键证据：
-- 用户决策：
-- 允许假设：
-
-## 执行动作
-1.
-2.
-3.
-
-## 输出
-- 主交付物：
-- 附件：
-- 不在本轮完成：
-
-## 验收标准
-- [ ]
-- [ ]
-- [ ]
-
-## 风险与停止条件
-- 风险：
-- 出现以下情况立即返回总控：
-```
-
-## 7. 执行纪律
-
-- 不跨工作包扩展内容。
-- 发现新问题先记录，不擅自增加大范围任务。
-- 重复信息只引用项目状态，不在每轮完整复述。
-- 已确认的资料不重新检索，除非出现冲突或可能过时。
-- 优先生成中间成果，如参数表、证据矩阵、模型框架、论点图，而不是直接写最终长文。
-- 关键结果尽早暴露给用户，不把问题留到最终阶段。
-- 不因输出篇幅长而误判任务完成。
-
-## 8. 失败和改向
-
-遇到以下情况返回总控：
-
-- 关键数据缺失；
-- 来源冲突且无法判断；
+- 关键证据、数据或参数缺失；
+- 来源冲突且任务卡未授权裁决；
 - 方法与资源不匹配；
-- 验收指标无法计算；
-- 结果违反基本物理规律；
-- 当前工具不能完成必要操作；
-- 当前工作包范围明显错误。
+- 结果违反基本物理或逻辑常识；
+- 当前任务卡边界错误；
+- 需要改变研究范围、方法、参数、提纲或核心论点。
 
-返回时说明：已完成到哪里、为什么不能继续、最小补充信息、可替代路线、是否需要用户决定。
+返回时说明完成到哪里、阻断原因、最小补充信息和可选下一动作，不自行进入下一工作包。
 
-## 9. 阶段完成
+## 6. 阶段交接
 
-使用 `../shared/STAGE_HANDOFF.template.md` 生成交接包，并返回总控。禁止自行进入下一工作包。
+按 `../shared/STAGE_HANDOFF.template.md` 和 `../shared/STAGE_HANDOFF.schema.json` 返回：
+
+- 当前交付物或草稿；
+- 结论摘要；
+- 证据定位；
+- 不确定项；
+- 改动文件；
+- 返回总控后的唯一建议动作。
+
+总控完成最低充分质量检查后，才决定继续、返工、补证据、改向或请求用户确认。

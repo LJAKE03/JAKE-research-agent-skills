@@ -80,6 +80,10 @@ try {
   Assert-Test ($support -match ("(?m)^model\s*=\s*`"{0}`"\s*$" -f $expectedSupportModel) -and $support -match ("(?m)^model_reasoning_effort\s*=\s*`"{0}`"\s*$" -f $expectedSupportEffort)) 'support matches canonical routing'
   Assert-Test ($output -match ("(?m)^model\s*=\s*`"{0}`"\s*$" -f $expectedEconomyModel) -and $output -match ("(?m)^model_reasoning_effort\s*=\s*`"{0}`"\s*$" -f $expectedEconomyEffort)) 'economy matches canonical routing'
   Assert-Test ($support -match '(?m)^sandbox_mode\s*=\s*"read-only"\s*$' -and $output -match '(?m)^sandbox_mode\s*=\s*"read-only"\s*$') 'both agents are read-only'
+  foreach($workerText in @($support,$output)) {
+    Assert-Test ($workerText.Contains('Do not contact another worker')) 'worker cannot transfer to another worker'
+    foreach($field in @('handoff_type','summary','deliverable','evidence_locations','uncertainties','changed_files','next_action')) { Assert-Test ($workerText.Contains($field)) "worker handoff contains $field" }
+  }
   $routingPath = Join-Path $newProject '.research-agent\MODEL_ROUTING.json'
   $routing = Get-Content -Raw -Encoding UTF8 -LiteralPath $routingPath | ConvertFrom-Json
   Assert-Test (-not [bool]$routing.delegation.subagents_may_delegate -and [bool]$routing.delegation.main_agent_final_review) 'delegation and final-review boundaries'
@@ -88,7 +92,7 @@ try {
   Assert-Test ([string]$routingStatus.status -eq 'ready' -and [int]$routingStatus.conflict_count -eq 0) 'new project routing status is ready'
   Assert-Test ([string]$routingStatus.canonical_sha256 -eq $canonicalHash -and [string]$routingStatus.snapshot_sha256 -eq $canonicalHash) 'new project canonical and snapshot hashes recorded'
   $agents = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $newProject 'AGENTS.md')
-  foreach($token in @('Codex','PowerShell','Python','`rg`','`git diff`',"max_threads=$expectedMaxThreads","max_depth=$expectedMaxDepth",'research-agent-routing:start','research-agent-routing:end')) {
+  foreach($token in @('Sol','Terra','Luna','PowerShell','Python','`rg`','`git diff`','紧凑交接 Schema','互相转交',"max_threads=$expectedMaxThreads","max_depth=$expectedMaxDepth",'research-agent-routing:start','research-agent-routing:end')) {
     Assert-Test ($agents.Contains($token)) "AGENTS contains $token"
   }
 
@@ -99,6 +103,9 @@ try {
     Assert-Test ($skillText.Contains('routing-preflight:required') -and $skillText.Contains('../shared/MODEL_ROUTING.json')) "$name has routing preflight"
     Assert-Test (Test-Path -LiteralPath (Join-Path (Split-Path -Parent $skillPath) '..\shared\MODEL_ROUTING.json') -PathType Leaf) "$name relative routing reference resolves"
   }
+  $orchestratorText=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '00-research-orchestrator\SKILL.md')
+  Assert-Test ($orchestratorText.Contains('../shared/MODEL_ROUTING.json') -and $orchestratorText.Contains('../shared/STAGE_HANDOFF.schema.json') -and $orchestratorText.Contains('Sol') -and $orchestratorText.Contains('Terra') -and $orchestratorText.Contains('Luna')) 'orchestrator model and handoff references resolve'
+  Assert-Test (-not($orchestratorText -match 'Fast|Standard|Strict|Exploratory|Direct|Focused|Open Research|CAPABILITY_MANIFEST|RUNTIME_POLICY')) 'orchestrator has no public modes or runtime framework'
   foreach($relative in @('.research-agent\MODEL_ROUTING.json','.research-agent\MODEL_ROUTING.md')) {
     Assert-Test (Test-Path -LiteralPath (Join-Path $newProject $relative) -PathType Leaf) "project relative reference resolves $relative"
   }

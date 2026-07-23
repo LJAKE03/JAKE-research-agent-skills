@@ -1,22 +1,23 @@
-# Research Agent Model and Tool Routing
+# Project Research Skills Model Routing
 
-This launcher-managed file is referenced by the managed block in project AGENTS.md.
+This project uses one unified research workflow. Users do not choose a mode, model,
+or Agent.
 
-## Model tiers
-
-| Tier | Model | Reasoning | Boundary |
+| Internal role | Model | Reasoning | Responsibility |
 |---|---|---|---|
-| strategic | Sol | xhigh/high | Main-agent research strategy, key judgement, evidence review, and final acceptance |
-| support | Terra | medium | Read-only bounded extraction, scanning, evidence inventory, and deterministic checks |
-| economy | Luna | low | Read-only mechanical formatting of complete and confirmed content |
+| strategic | GPT-5.6 Sol | xhigh | Requirements, planning, methods, evidence synthesis, key scientific judgement, final response |
+| support | GPT-5.6 Terra | medium | Bounded literature search, web verification, file scanning, extraction, evidence tables, provenance checks |
+| economy | GPT-5.6 Luna | low | Prose, language, and formatting from a complete locked writing package |
 
-Subagents may not delegate. The main agent reviews every result and owns final research judgement.
+Sol sends compact task cards rather than full history. Terra returns evidence packs;
+Luna returns writing drafts. Workers do not delegate or contact one another.
 
-## Tool and token controls
+Terra does not decide research direction, method, parameters, source reliability, or
+final conclusions. Luna does not introduce facts, citations, formulas, causal claims,
+or scientific judgement. Sol owns every key research decision and performs compact
+semantic acceptance for publication, key parameters or methods, safety/high-cost
+decisions, and final scientific conclusions.
 
-- Prefer Codex built-in reads, searches, and precise patches; use rg for repository search and git diff for version inspection.
-- Prefer PowerShell for Windows launchers, registry, environment, system paths, and CMD/PowerShell compatibility.
-- Prefer Python for data cleaning, CSV/JSON/Excel, research computing, plotting, and reusable cross-platform batches.
-- Limit search scope and terminal output; write large results to files and keep only status, paths, counts, summaries, and errors on screen.
-- Keep verbose logs off by default; run the smallest relevant test first and the full suite last.
-- Change diagnostic method after two consecutive failures of the same class; do not retry blindly.
+The canonical machine-readable snapshot is `MODEL_ROUTING.json`. If
+`routing-version.json` is not ready, run the project routing preflight before using
+the workers.
