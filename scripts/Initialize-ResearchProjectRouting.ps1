@@ -45,9 +45,9 @@ function Assert-HasProperties {
 
 function Assert-CanonicalRoutingContract {
   param([object]$Routing)
-  Assert-HasProperties $Routing 'root' @('schema_version','configuration_version','model_mapping_version','provider','primary_surface','verified_with','routing_mode','runtime_preflight','tiers','fallback','delegation','quality_gates')
+  Assert-HasProperties $Routing 'root' @('schema_version','configuration_version','model_mapping_version','provider','primary_surface','verified_with','workflow','runtime_preflight','tiers','fallback','delegation','quality_gates')
   Assert-HasProperties $Routing.verified_with 'verified_with' @('command','codex_cli_version')
-  Assert-HasProperties $Routing.routing_mode 'routing_mode' @('default','max_initial_blocking_questions','continue_low_risk_work_packages','strict_when')
+  Assert-HasProperties $Routing.workflow 'workflow' @('default','max_initial_blocking_questions','continue_low_risk_work_packages','sol_semantic_acceptance_when')
   Assert-HasProperties $Routing.runtime_preflight 'runtime_preflight' @('command','strategic_unavailable_status','support_or_economy_unavailable_status')
   Assert-HasProperties $Routing.tiers 'tiers' @('strategic','support','economy')
   foreach($tierName in @('strategic','support','economy')) {
@@ -61,9 +61,9 @@ function Assert-CanonicalRoutingContract {
   if ([string]::IsNullOrWhiteSpace([string]$Routing.configuration_version) -or [string]::IsNullOrWhiteSpace([string]$Routing.model_mapping_version)) { throw 'canonical contract requires version fields' }
   if ([string]$Routing.provider -ne 'ChatGPT Windows desktop app and Codex' -or [string]$Routing.primary_surface -ne 'project-scoped .codex agents') { throw 'canonical provider/surface contract is invalid' }
   if ([string]$Routing.verified_with.command -ne 'codex debug models' -or [string]::IsNullOrWhiteSpace([string]$Routing.verified_with.codex_cli_version)) { throw 'canonical verification contract is invalid' }
-  $strictWhen = @($Routing.routing_mode.strict_when)
-  $expectedStrictWhen = @('publication_or_submission','safety_or_high_cost_decision','scientific_final_acceptance')
-  if ([string]$Routing.routing_mode.default -ne 'balanced' -or [int]$Routing.routing_mode.max_initial_blocking_questions -lt 0 -or [int]$Routing.routing_mode.max_initial_blocking_questions -gt 2 -or -not [bool]$Routing.routing_mode.continue_low_risk_work_packages -or (($strictWhen -join '|') -ne ($expectedStrictWhen -join '|'))) { throw 'canonical routing_mode contract is invalid' }
+  $acceptanceWhen = @($Routing.workflow.sol_semantic_acceptance_when)
+  $expectedAcceptanceWhen = @('publication_or_submission','key_parameter_or_core_method','safety_or_high_cost_decision','scientific_final_acceptance')
+  if ([string]$Routing.workflow.default -ne 'unified' -or [int]$Routing.workflow.max_initial_blocking_questions -lt 0 -or [int]$Routing.workflow.max_initial_blocking_questions -gt 2 -or -not [bool]$Routing.workflow.continue_low_risk_work_packages -or (($acceptanceWhen -join '|') -ne ($expectedAcceptanceWhen -join '|'))) { throw 'canonical workflow contract is invalid' }
   if ([string]$Routing.runtime_preflight.command -ne 'codex debug models' -or [string]$Routing.runtime_preflight.strategic_unavailable_status -ne 'blocked_model_catalog' -or [string]$Routing.runtime_preflight.support_or_economy_unavailable_status -ne 'degraded_sol_only') { throw 'canonical runtime_preflight contract is invalid' }
 
   $expectedTierContract = @{

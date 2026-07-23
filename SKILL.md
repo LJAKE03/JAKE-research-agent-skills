@@ -1,31 +1,31 @@
 ---
 name: research-agent-skills-index
-description: Entry index for the coordinated research Agent Skills suite. For any complex research project, start with 00-research-orchestrator/SKILL.md and load other skills only when routed by the orchestrator.
+description: Entry index for the coordinated research Skills suite. For any nontrivial research task, start with 00-research-orchestrator/SKILL.md; it runs one unified workflow, automatically selects functional Skills and Sol/Terra/Luna responsibilities, and keeps context transfers compact. Users never choose a mode, model, or Agent.
 ---
 
-# 科研 Agent Skills 总入口
+# 科研 Skills 集成包总入口
 
-本文件只负责索引，不承载完整工作流。
+本文件只负责索引；所有功能 Skill 通过一条统一科研流程协作，不承载另一套 Agent Runtime。
 
-必须首先读取：
+首先读取：
 
 - `00-research-orchestrator/SKILL.md`
 
-由总控按当前阶段选择：
+功能 Skills：
 
-- `01-requirement-elicitation/SKILL.md`
-- `02-research-reconnaissance/SKILL.md`
-- `03-stage-planning-execution/SKILL.md`
-- `04-literature-review/SKILL.md`
-- `05-academic-writing/SKILL.md`
-- `06-quality-gate/SKILL.md`
+- `01-requirement-elicitation`：高影响需求和边界；
+- `02-research-reconnaissance`：外部检索、查证和资料扫描；
+- `03-stage-planning-execution`：真实依赖驱动的阶段任务卡；
+- `04-literature-review`：文献矩阵、主题综合和研究缺口；
+- `05-academic-writing`：锁定论点和证据后的科研写作；
+- `06-quality-gate`：最低充分检查和 Sol 紧凑验收。
 
-协同规则：
+统一协同规则：
 
-1. 复杂任务先澄清、再检索、后拆解。
-2. 一次只执行一个工作包。
-3. 功能 Skill 必须返回阶段交接包。
-4. 每阶段必须经过质量门。
-5. 关键节点由用户确认。
-6. 更新 `shared/PROJECT_STATE.template.md`。
-7. 不得绕过总控直接从一个功能 Skill 跳到另一个。
+1. Sol 始终负责理解、规划、方法、证据综合和关键科研判断。
+2. Terra 只接收有界证据任务卡，返回证据表、来源定位、缺口和摘要。
+3. Luna 只接收锁定写作包，生成文本、格式和语言版本，不新增科研事实或判断。
+4. Worker 不互相转交或递归委派，结果统一返回 Sol。
+5. 只在真实依赖存在时形成阶段；简单任务直接完成。
+6. 质量强度内部自动选择；投稿、关键参数、核心方法和最终科学结论由 Sol 紧凑验收。
+7. 模型间不传递完整历史、全部工具日志或整篇原文。

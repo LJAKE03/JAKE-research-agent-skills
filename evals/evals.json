@@ -1,83 +1,113 @@
 {
-  "skill_suite": "research-agent-skills-v2",
-  "version": "2.1",
+  "skill_name": "research-project-orchestrator",
   "evals": [
     {
       "id": 1,
-      "prompt": "帮我做一个船用氨燃料供给系统控制优化项目。",
-      "expected_route": "mixed",
+      "prompt": "帮我规划一个船用氨重整余热利用研究项目，当前只有公开文献和一套5 kW固定床台架。",
+      "expected_workers": ["terra"],
+      "expected_review": "sol_semantic",
+      "requires_stage_plan": true,
       "risk_level": "high",
-      "expected_behavior": ["先触发总控而不是直接给完整方案", "检查现有上下文并最多提出2个阻断问题", "建议联网学习相似项目", "根据复杂度和风险动态确定阶段数量", "不一次完成全部项目"]
+      "expected_behavior": ["Sol先理解范围和资源约束", "只询问真正改变路线的问题", "Terra接收有界证据任务卡", "Sol综合证据并决定方法与阶段"]
     },
     {
       "id": 2,
-      "prompt": "根据这20篇论文写一篇SCI综述。",
-      "expected_route": "mixed",
-      "risk_level": "high",
-      "expected_behavior": ["先确认综述范围和类型", "建立文献矩阵和主题综合", "不直接逐篇摘要或一次生成全文", "每个阶段返回总控和质量门"]
+      "prompt": "扫描这个项目目录，提取所有实验工况、温度、压力和数据文件位置，整理成证据表。",
+      "expected_workers": ["terra"],
+      "expected_review": "terra_provenance",
+      "requires_stage_plan": false,
+      "risk_level": "medium",
+      "expected_behavior": ["任务卡限定目录和字段", "返回证据表和文件定位", "不判断最优工况", "不复制无关文件全文"]
     },
     {
       "id": 3,
-      "prompt": "我想写一篇小论文，题目还没完全确定，数据已经有了。",
-      "expected_route": "strategic",
-      "risk_level": "medium",
-      "expected_behavior": ["识别为需要需求澄清", "只询问会改变科学问题或交付物的阻断信息", "先建立论点证据图和大纲", "不立即写完整文章"]
+      "prompt": "检索近五年氨裂解催化剂文献，并判断哪些结论足以支持我的研究假设。",
+      "expected_workers": ["terra"],
+      "expected_review": "sol_semantic",
+      "requires_stage_plan": false,
+      "risk_level": "high",
+      "expected_behavior": ["Terra检索并整理证据", "Terra不裁决来源可靠性或研究假设", "Sol综合证据并说明限制"]
     },
     {
       "id": 4,
-      "prompt": "帮我找一下别人是怎么做电动阀故障预测的，并看看我能不能照着做。",
-      "expected_route": "mixed",
+      "prompt": "提纲、论点、数据和引用编号都已确认，请根据写作包生成英文Results，不要增加新结论。",
+      "expected_workers": ["luna"],
+      "expected_review": "deterministic",
+      "requires_stage_plan": false,
       "risk_level": "medium",
-      "expected_behavior": ["主代理先限定检索边界", "支持代理只读提取候选证据", "优先原始论文和官方来源", "主代理输出迁移判断"]
+      "expected_behavior": ["Sol先确认写作包完整", "Luna按锁定提纲和证据编号生成草稿", "不得新增事实引用公式或判断", "不重建项目计划"]
     },
     {
       "id": 5,
-      "prompt": "根据专家意见把报告全部改好。",
-      "expected_route": "mixed",
+      "prompt": "基于现有数据和最新文献完成一篇可投稿的SCI小论文。",
+      "expected_workers": ["terra", "luna"],
+      "expected_review": "sol_semantic",
+      "requires_stage_plan": true,
       "risk_level": "high",
-      "expected_behavior": ["读取报告和意见", "按意见拆解工作包", "低风险机械修改可连续执行", "逐条销项并经过质量门"]
+      "expected_behavior": ["Sol锁定研究问题方法论点和提纲", "Terra提供证据包", "Luna按章节写作包起草", "投稿前Sol只做一次紧凑语义验收"]
     },
     {
       "id": 6,
-      "prompt": "继续昨天的项目，之前已经确定了技术路线。",
-      "expected_route": "strategic",
-      "risk_level": "medium",
-      "expected_behavior": ["优先恢复项目状态", "不重复询问已确定内容", "核对当前工作包和未决问题", "从最近未完成阶段继续"]
+      "prompt": "我只想确认对流换热系数的SI单位，直接回答。",
+      "expected_workers": [],
+      "expected_review": "deterministic",
+      "requires_stage_plan": false,
+      "risk_level": "low",
+      "expected_behavior": ["Sol直接给出W·m⁻²·K⁻¹", "不创建阶段或项目状态", "不委派Worker", "不要求用户选择模式或模型"]
     },
     {
       "id": 7,
-      "prompt": "查一下某参数的一般范围，直接告诉我数值。",
-      "expected_route": "mixed",
-      "risk_level": "medium",
-      "expected_behavior": ["主代理明确参数和工况边界", "支持代理可只读检索候选范围", "给出单位、条件和来源", "最终数值判断由主代理完成"]
+      "prompt": "查某科研软件官网当前稳定版本，只给版本号、发布日期和官方链接。",
+      "expected_workers": ["terra"],
+      "expected_review": "terra_provenance",
+      "requires_stage_plan": false,
+      "risk_level": "low",
+      "expected_behavior": ["使用一个有界查证任务卡", "只返回官方来源定位和指定字段", "Sol核对后直接答复", "不创建项目状态"]
     },
     {
       "id": 8,
-      "prompt": "把已有结果讨论部分扩充到3000字。",
-      "expected_route": "strategic",
+      "prompt": "Fluent开启能量方程后发散。给出下一轮最小诊断，只允许一个单变量试验。",
+      "expected_workers": [],
+      "expected_review": "sol_semantic",
+      "requires_stage_plan": false,
       "risk_level": "high",
-      "expected_behavior": ["先检查现有数据能否支撑扩充", "围绕现象、证据、机理、文献比较和意义扩写", "不得用重复和虚构填充篇幅", "输出后进入科学质量门"]
+      "expected_behavior": ["Sol区分事实与候选根因", "当前只激活一个单变量试验", "定义观测量和停止条件", "其余候选留待后续"]
     },
     {
       "id": 9,
-      "prompt": "分析 Fluent 能量方程发散的根因，并决定下一组边界条件。",
-      "expected_route": "strategic",
-      "risk_level": "high",
-      "expected_behavior": ["不得降级给支持或经济代理", "检查模型、网格、物性和边界条件", "区分证据与诊断假设", "最终参数由主代理决定"]
+      "prompt": "继续既有项目：范围、基准和当前工作包已确认，请给出输入数据表和缺口清单的下一版。",
+      "expected_workers": [],
+      "expected_review": "deterministic",
+      "requires_stage_plan": false,
+      "risk_level": "medium",
+      "expected_behavior": ["读取最小项目状态", "不重建总体计划", "不重复询问已确认项", "直接推进当前工作包"]
     },
     {
       "id": 10,
-      "prompt": "从这30篇已提供的论文中提取温度、压力、催化剂和主要结论，形成带页码来源的候选表。",
-      "expected_route": "support",
-      "risk_level": "low",
-      "expected_behavior": ["只读批量提取", "每条记录保留来源定位", "不裁决研究方向或文献可靠性", "把不确定项返回主代理"]
+      "prompt": "把三篇论文已经摘录的温度、转化率、压力和进料条件做成带来源定位的比较表。",
+      "expected_workers": ["terra"],
+      "expected_review": "terra_provenance",
+      "requires_stage_plan": false,
+      "risk_level": "medium",
+      "expected_behavior": ["统一单位但保留原值", "列出来源定位", "指出不可直接比较的工况", "不擅自判断谁最好"]
     },
     {
       "id": 11,
-      "prompt": "把已经确认的Markdown内容统一编号、标点和表格字段，不新增事实。",
-      "expected_route": "economy",
-      "risk_level": "low",
-      "expected_behavior": ["只做机械转换", "不新增事实、数值、公式或引用", "保留原意", "结果交主代理抽检"]
+      "prompt": "审查这篇投稿前手稿的关键参数、主要结论和证据是否匹配，只给必须修改的问题，不要重写全文。",
+      "expected_workers": [],
+      "expected_review": "sol_semantic",
+      "requires_stage_plan": false,
+      "risk_level": "high",
+      "expected_behavior": ["Sol执行紧凑语义验收", "复用参数和证据定位", "只列出高影响问题", "不重写全文"]
+    },
+    {
+      "id": 12,
+      "prompt": "现有证据还没有整理，但请直接让写作模型自由发挥一段Discussion。",
+      "expected_workers": ["terra"],
+      "expected_review": "sol_semantic",
+      "requires_stage_plan": false,
+      "risk_level": "high",
+      "expected_behavior": ["不把未锁定任务交给Luna", "先由Sol确认论点和证据缺口", "需要时让Terra整理证据", "不得虚构Discussion结论"]
     }
   ]
 }

@@ -1,7 +1,7 @@
 {
     "status":  "pending",
-    "configuration_version":  "1.1.0",
-    "model_mapping_version":  "sol-terra-luna-v1",
+    "configuration_version":  "1.2.0",
+    "model_mapping_version":  "sol-terra-luna-unified-v2",
     "template_version":  "research-routing-v2",
     "canonical_sha256":  null,
     "snapshot_sha256":  null,

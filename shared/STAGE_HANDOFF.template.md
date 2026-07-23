@@ -1,53 +1,38 @@
-# STAGE HANDOFF PACKET
+# COMPACT RESEARCH TASK CARD AND HANDOFF
 
-## 1. 基本信息
-- 项目：
-- WP：
-- 执行 Skill：
-- 日期/版本：
+## Sol → Worker task card
 
-## 2. 本阶段目标
-- 核心问题：
-- 本轮边界：
-- 验收标准：
+只发送完成当前任务所需的最小上下文：
 
-## 3. 使用输入
-- 用户提供：
-- 文件/数据：
-- 网络与文献：
-- 上一阶段交付：
-- 假设：
+- `objective`：当前唯一目标；
+- `input_locators`：文件、页码、URL、数据表或已锁定摘要定位；
+- `locked_decisions`：不得改变的范围、方法、参数、论点和术语；
+- `output_contract`：证据表、字段、草稿或格式结构；
+- `acceptance_checks`：可观察验收条件；
+- `stop_conditions`：证据不足、冲突、越界或高风险时停止。
 
-## 4. 完成动作
-1.
-2.
-3.
+禁止附带完整对话、全部项目历史、全部工具日志或可通过定位读取的整篇原文。
 
-## 5. 主要产出
-- 主交付物：
-- 关键发现：
-- 定量结果：
-- 生成/修改文件：
+### Terra 任务卡
 
-## 6. 证据与可追溯性
-| 结论/参数 | 证据或数据 | 类型：事实/综合/推断/建议 | 可信度 |
-|---|---|---|---|
+限定检索范围、资料类型、字段、来源要求和停止条件。Terra 返回证据表、定位、缺口和可观察摘要，不做可靠性裁决或科学综合。
 
-## 7. 验收自检
-- [ ] 回答核心问题
-- [ ] 未超出本轮范围
-- [ ] 所有关键结论可追溯
-- [ ] 未编造数据或文献
-- [ ] 风险和限制已说明
-- [ ] 可供下一阶段直接使用
+### Luna 写作包
 
-## 8. 未解决问题
-- 阻断性：
-- 高影响：
-- 可延后：
+必须包含锁定的目标、提纲、论点顺序、可用事实/数据/公式/引用编号、风格、语言、长度、格式、禁止新增项和占位符规则。
 
-## 9. 建议路由
-- 下一 Skill：
-- 理由：
-- 需要用户决定：
-- 是否建议进入质量门：是
+## Worker → Sol handoff
+
+按 `STAGE_HANDOFF.schema.json` 返回：
+
+- `schema_version`：2；
+- `status`：complete / partial / blocked；
+- `handoff_type`：evidence_pack / writing_draft / stage_result / verification_result；
+- `summary`：最多 8 条结论摘要；
+- `deliverable`：证据表、提取结果、草稿或验证结果；
+- `evidence_locations`：来源或文件定位；
+- `uncertainties`：缺口、冲突和待 Sol 决定事项；
+- `changed_files`：只读 Worker 必须为空；
+- `next_action`：返回 Sol 后的唯一建议动作。
+
+Worker 不得直接联系另一个 Worker，不得自行进入下一阶段。

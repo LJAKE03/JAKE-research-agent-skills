@@ -1,18 +1,18 @@
 {
   "schema_version": 2,
-  "configuration_version": "1.1.0",
-  "model_mapping_version": "sol-terra-luna-v1",
+  "configuration_version": "1.2.0",
+  "model_mapping_version": "sol-terra-luna-unified-v2",
   "provider": "ChatGPT Windows desktop app and Codex",
   "primary_surface": "project-scoped .codex agents",
   "verified_with": {
     "command": "codex debug models",
     "codex_cli_version": "0.144.1"
   },
-  "routing_mode": {
-    "default": "balanced",
+  "workflow": {
+    "default": "unified",
     "max_initial_blocking_questions": 2,
     "continue_low_risk_work_packages": true,
-    "strict_when": ["publication_or_submission", "safety_or_high_cost_decision", "scientific_final_acceptance"]
+    "sol_semantic_acceptance_when": ["publication_or_submission", "key_parameter_or_core_method", "safety_or_high_cost_decision", "scientific_final_acceptance"]
   },
   "runtime_preflight": {
     "command": "codex debug models",
@@ -24,19 +24,19 @@
       "model": "gpt-5.6-sol",
       "reasoning_effort": "xhigh",
       "sandbox_mode": "workspace-write",
-      "purpose": "research planning, key technical judgement, evidence review, and final acceptance"
+      "purpose": "requirements, orchestration, method selection, evidence synthesis, key scientific judgement, and compact final acceptance"
     },
     "support": {
       "model": "gpt-5.6-terra",
       "reasoning_effort": "medium",
       "sandbox_mode": "read-only",
-      "purpose": "bounded extraction, scanning, evidence inventory, and deterministic checks"
+      "purpose": "bounded literature search, web verification, file scanning, extraction, evidence tables, and provenance checks"
     },
     "economy": {
       "model": "gpt-5.6-luna",
       "reasoning_effort": "low",
       "sandbox_mode": "read-only",
-      "purpose": "mechanical formatting and transformations of complete, confirmed content"
+      "purpose": "prose drafting, language, and formatting from a complete locked research writing package"
     }
   },
   "fallback": {

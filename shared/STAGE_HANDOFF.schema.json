@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/LJAKE03/JAKE-research-agent-skills/raw/master/shared/STAGE_HANDOFF.schema.json",
+  "title": "Compact Research Handoff",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "handoff_type", "summary", "deliverable", "evidence_locations", "uncertainties", "changed_files", "next_action"],
+  "properties": {
+    "schema_version": {"const": 2},
+    "status": {"enum": ["complete", "partial", "blocked"]},
+    "handoff_type": {"enum": ["evidence_pack", "writing_draft", "stage_result", "verification_result"]},
+    "summary": {"type": "array", "minItems": 1, "maxItems": 8, "items": {"type": "string", "minLength": 1}},
+    "deliverable": {"type": "string", "minLength": 1},
+    "evidence_locations": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "uncertainties": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "changed_files": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "next_action": {"type": "string", "minLength": 1}
+  }
+}

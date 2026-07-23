@@ -4,7 +4,7 @@
   "title": "Research Agent Model Routing",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "configuration_version", "model_mapping_version", "provider", "primary_surface", "verified_with", "routing_mode", "runtime_preflight", "tiers", "fallback", "delegation", "quality_gates"],
+  "required": ["schema_version", "configuration_version", "model_mapping_version", "provider", "primary_surface", "verified_with", "workflow", "runtime_preflight", "tiers", "fallback", "delegation", "quality_gates"],
   "properties": {
     "schema_version": {"const": 2},
     "configuration_version": {"type": "string", "minLength": 1},
@@ -20,21 +20,22 @@
         "codex_cli_version": {"type": "string", "minLength": 1}
       }
     },
-    "routing_mode": {
+    "workflow": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["default", "max_initial_blocking_questions", "continue_low_risk_work_packages", "strict_when"],
+      "required": ["default", "max_initial_blocking_questions", "continue_low_risk_work_packages", "sol_semantic_acceptance_when"],
       "properties": {
-        "default": {"const": "balanced"},
+        "default": {"const": "unified"},
         "max_initial_blocking_questions": {"type": "integer", "minimum": 0, "maximum": 2},
         "continue_low_risk_work_packages": {"const": true},
-        "strict_when": {
+        "sol_semantic_acceptance_when": {
           "type": "array",
-          "minItems": 3,
-          "maxItems": 3,
+          "minItems": 4,
+          "maxItems": 4,
           "uniqueItems": true,
           "prefixItems": [
             {"const": "publication_or_submission"},
+            {"const": "key_parameter_or_core_method"},
             {"const": "safety_or_high_cost_decision"},
             {"const": "scientific_final_acceptance"}
           ],

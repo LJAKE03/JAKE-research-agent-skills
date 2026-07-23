@@ -1,156 +1,82 @@
 ---
 name: research-quality-gate-and-human-review
-description: Use after every substantial stage of a research project, literature review, analysis, paper section, or report. It acts as an independent reviewer, checks the result against the task contract, evidence, method, acceptance criteria, consistency, traceability, and overclaiming risks, assigns issue severity, and returns PASS, CONDITIONAL PASS, REVISE, or BLOCKED to the orchestrator. It must expose the result for user review at important checkpoints and must not silently approve weak work.
+description: Use after a substantial research stage and whenever publication, key parameters, core methods, safety, high-cost decisions, or final scientific conclusions need acceptance. Apply only the lowest sufficient deterministic, provenance, or Sol semantic check; reuse compact handoffs and source locators; return PASS, CONDITIONAL PASS, REVISE, or BLOCKED without creating a separate Reviewer Agent or rewriting the full deliverable.
 ---
 
-# 质量校核与阶段门
+# 科研质量校核与紧凑验收
 
 <!-- routing-preflight:required -->
-执行前确认总控已加载 `../shared/MODEL_ROUTING.json`；如未加载，先返回 `../00-research-orchestrator/SKILL.md`，不得直接执行。本 Skill 只引用共享规则，不复制其全文。
+执行前确认总控已加载 `../shared/MODEL_ROUTING.json`。质量强度由当前风险自动决定，不形成面向用户的工作模式，也不依赖独立 Runtime。
 
-## 1. 角色
+## 1. 最低充分检查
 
-作为独立审查者，不为已完成内容辩护。先检查，再建议修改。重大问题未解决时不得通过。
+### L0：确定性检查
 
-## 2. 输入
+适用于格式、语法、Schema、哈希、文件存在性、单位、编号和可重复脚本测试。优先使用工具，不调用 Worker。
 
-按所选层级读取最小输入集：
+### L1：证据完整性检查
 
-- **L0**：待检文件/产物、适用的格式或测试规则、验证命令；简单任务快车道不要求任务合同、阶段卡、完整 `PROJECT_STATE` 或用户逐阶段确认。
-- **L1/Terra**：L0 结果（如有）、论断/字段清单、来源定位与元数据、覆盖要求；只做 provenance、coverage、缺失项和不确定项机械核验。
-- **L2/Sol**：研究问题或任务合同、待裁决成果、证据/数据及来源、验收标准；仅在跨阶段或高影响决策时读取阶段卡、交接包和项目状态。
+由 Terra 或等价只读检查核对：
 
-缺少当前层级的必要输入时结论为 `BLOCKED`；不得为低层检查加载无关上下文。
+- 来源定位和元数据；
+- 字段、论断和引用覆盖；
+- 数值的条件、单位和来源；
+- 遗漏、冲突和不确定项。
 
-## 3. 分层检查与六类质量门
+L1 不裁决来源真实性、权威性、新颖性、方法适用性或科学结论。
 
-先选择最低但足够的检查层级，避免为机械任务重复加载全部科研上下文：
+### L2：Sol 语义验收
 
-- **L0 工具检查**：语法、Schema、哈希、文件存在性、格式和可重复脚本测试；优先用确定性工具完成。
-- **L1 证据检查**：由 Terra/只读支持代理机械核对 provenance、字段完整性、覆盖率、遗漏项和不确定项；不得判断来源真实性、权威性、可靠性、新颖性或科学结论。
-- **L2 科学检查**：由 Sol 裁决来源真实性、权威性、可靠性、新颖性，以及方法、参数、解释、证据强度、过度推断和最终结论；投稿、申报、安全、高成本决策及阶段最终验收必须使用。
+由 Sol 裁决：
 
-L1 复用 L0 结果，L2 复用 L0/L1 结果，不重复粘贴已经记录在交接包中的原始材料。
+- 来源是否真实、权威、可靠且足以支撑论断；
+- 方法、参数、边界和解释是否合理；
+- 结论是否超出证据，是否遗漏反例或不确定性；
+- 写作是否忠实于锁定提纲和证据包。
 
-### G0 任务一致性
+投稿/申报、安全或高成本决策、关键参数、核心方法和最终科学结论必须使用 L2。
 
-- 是否回答当前阶段核心问题？
-- 是否越界？
-- 是否满足交付形式？
-- 是否推进总体目标？
+## 2. 上下文纪律
 
-### G1 信息与证据
+- L1 复用 L0 结果；L2 复用 L0/L1 的摘要和定位；
+- 不重复粘贴原始材料，不重新加载完整项目历史；
+- Luna 草稿验收只读取锁定写作包、草稿、问题定位和必要证据；
+- Sol 只做一次紧凑语义验收，不为验收重新写全文；
+- 不新增独立 Reviewer Agent。
 
-- **L1**：来源定位和元数据是否齐全，论断/引用覆盖关系是否有缺口？
-- **L1**：数值是否标出条件、单位和来源，缺失或冲突项是否列入待核清单？
-- **L2**：来源是否真实、权威、可靠且足够新，引用是否实质支持具体论断？
-- **L2**：新颖性判断是否成立，是否遗漏关键反例或将推断写成事实？
+缺少当前检查所必需的输入时返回 `BLOCKED`，说明最小缺口。
 
-### G2 方法与可执行性
+## 3. 六类检查
 
-- 方法是否适合研究问题？
-- 假设是否合理？
-- 参数和边界是否可追溯？
-- 是否可复现？
-- 是否与数据、资源和软件能力匹配？
+| 质量门 | 核心问题 |
+|---|---|
+| G0 任务一致性 | 是否回答当前目标、遵守边界并形成可用交付物 |
+| G1 信息与证据 | 来源、条件、单位、覆盖和不确定性是否可追溯 |
+| G2 方法与执行 | 方法、假设、参数、边界、资源和复现性是否匹配 |
+| G3 结果与科学性 | 趋势、数量级、因果、异常和结论边界是否合理 |
+| G4 写作与表达 | 是否忠实于锁定论点，术语、结构、图表和引用是否一致 |
+| G5 可交接性 | 下一动作、未决项、文件和用户决定是否清楚 |
 
-### G3 结果与科学合理性
+## 4. 决策
 
-- 计算、趋势、单位和数量级是否合理？
-- 结果是否违反物理或逻辑常识？
-- 是否存在选择性呈现？
-- 结论是否超出数据支持范围？
-- 不确定性和限制是否说明？
+- `PASS`：满足当前层级，关键项没有未决问题；
+- `CONDITIONAL PASS`：可以继续，但存在不改变当前路线的明确小问题；
+- `REVISE`：存在会显著影响可信度、完整性或可用性的重大问题；
+- `BLOCKED`：缺少必要输入，或存在使方法、数据或结论失效的问题。
 
-### G4 写作与表达
+不得用总分掩盖单项严重问题。
 
-- 结构是否完整？
-- 术语、符号和编号是否一致？
-- 论证是否遵循“证据—分析—结论”？
-- 是否有重复、空话、模板化或泄露过程的表达？
-- 是否符合目标期刊/报告风格？
-
-### G5 可交接性
-
-- 下一阶段是否能直接使用？
-- 阶段切换或高影响状态变化时，项目状态是否更新？
-- 未决问题是否清晰？
-- 用户需要决定什么？
-- 是否提供可验证的验收结果？
-
-## 4. 评分
-
-每类 0–3 分：
-
-- 0：严重缺失或错误；
-- 1：存在重大问题；
-- 2：基本合格但需改进；
-- 3：满足当前阶段要求。
-
-决策规则：
-
-- 任一项 0 分：`BLOCKED`
-- 任一项 1 分：`REVISE`
-- 全部 ≥2 且存在重要未决问题：`CONDITIONAL PASS`
-- 全部 ≥2 且关键项多数为 3：`PASS`
-
-不得只看总分掩盖单项严重问题。
-
-## 5. 问题分级
-
-| 等级 | 含义 | 处理 |
-|---|---|---|
-| Critical | 会使路线、数据或结论失效 | 阻断 |
-| Major | 显著影响可信度或完整性 | 返工 |
-| Minor | 不改变核心结论 | 可条件通过 |
-| Suggestion | 优化项 | 可后续处理 |
-
-## 6. 输出格式
+## 5. 紧凑输出
 
 ```markdown
-# Quality Gate Report
-
-## 阶段
-- 项目：
-- WP：
-- 审查对象：
-
-## 评分
-| 质量门 | 分数 | 依据 |
-|---|---:|---|
-| G0 任务一致性 |  |  |
-| G1 信息与证据 |  |  |
-| G2 方法与可执行性 |  |  |
-| G3 结果与科学合理性 |  |  |
-| G4 写作与表达 |  |  |
-| G5 可交接性 |  |  |
-
-## 问题清单
-| 严重度 | 问题 | 影响 | 修改动作 | 责任 Skill |
-|---|---|---|---|---|
-
-## 结论
-- PASS / CONDITIONAL PASS / REVISE / BLOCKED
-- 理由：
-- 进入下一阶段前必须完成：
-- 可延后处理：
-
-## 用户检查（仅高影响检查点）
-- 建议用户重点查看：
-- 需要用户决定：
+## Quality Gate
+- 对象：
+- 检查层级：L0 / L1 / L2
+- 结论：PASS / CONDITIONAL PASS / REVISE / BLOCKED
+- 关键依据：
+- 必须修改：
+- 可延后：
+- 用户需要决定：
 ```
 
-## 7. 用户参与
-
-以下内容不得仅由 Agent 自行批准：
-
-- 研究范围改变；
-- 核心技术路线；
-- 关键参数取值；
-- 是否接受证据不足的假设；
-- 论文的主要创新点和结论；
-- 最终提交版本。
-
-## 8. 返回规则
-
-将质量报告返回总控。质量门本身不推进阶段；总控按风险决定连续执行或请求用户，并仅在阶段切换或高影响变化时完整更新状态。
+仅在用户需要审阅复杂问题时展开六类评分表；常规通过只返回摘要和定位。

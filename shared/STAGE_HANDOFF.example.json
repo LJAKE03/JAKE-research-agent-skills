@@ -1,0 +1,11 @@
+{
+  "schema_version": 2,
+  "status": "complete",
+  "handoff_type": "evidence_pack",
+  "summary": ["Two primary sources support the bounded claim."],
+  "deliverable": "| Source | Finding | Locator |\n|---|---|---|\n| Paper A | Finding A | paper-a.pdf#page=12 |\n| Specification B | Finding B | standard-b.pdf#section=4.2 |",
+  "evidence_locations": ["paper-a.pdf#page=12", "standard-b.pdf#section=4.2"],
+  "uncertainties": ["One operating condition remains unmatched."],
+  "changed_files": [],
+  "next_action": "Sol decides whether the unmatched condition requires another bounded search."
+}
