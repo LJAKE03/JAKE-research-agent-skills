@@ -20,7 +20,8 @@ $names = @(
     '03-stage-planning-execution',
     '04-literature-review',
     '05-academic-writing',
-    '06-quality-gate'
+    '06-quality-gate',
+    '07-code-context'
 )
 if ([string]::IsNullOrWhiteSpace($SourceRoot)) { $SourceRoot = Split-Path -Parent $PSScriptRoot }
 if ([string]::IsNullOrWhiteSpace($ReportPath)) { $ReportPath = Join-Path $SourceRoot 'installation-report.md' }
@@ -86,6 +87,7 @@ catch {
 }
 
 foreach ($relativePath in @(
+    '07-code-context\evals\evals.json',
     'shared\PROJECT_STATE.template.md',
     'shared\STAGE_HANDOFF.template.md',
     'shared\STAGE_HANDOFF.schema.json',

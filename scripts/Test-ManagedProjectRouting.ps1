@@ -96,7 +96,7 @@ try {
     Assert-Test ($agents.Contains($token)) "AGENTS contains $token"
   }
 
-  $skillNames = @('00-research-orchestrator','01-requirement-elicitation','02-research-reconnaissance','03-stage-planning-execution','04-literature-review','05-academic-writing','06-quality-gate')
+  $skillNames = @('00-research-orchestrator','01-requirement-elicitation','02-research-reconnaissance','03-stage-planning-execution','04-literature-review','05-academic-writing','06-quality-gate','07-code-context')
   foreach($name in $skillNames) {
     $skillPath = Join-Path $SourceRoot "$name\SKILL.md"
     $skillText = Get-Content -Raw -Encoding UTF8 -LiteralPath $skillPath

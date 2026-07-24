@@ -13,7 +13,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 if([string]::IsNullOrWhiteSpace($SourceRoot)){$SourceRoot=Split-Path -Parent $PSScriptRoot}
-$skillDirs = @('00-research-orchestrator','01-requirement-elicitation','02-research-reconnaissance','03-stage-planning-execution','04-literature-review','05-academic-writing','06-quality-gate','shared')
+$skillDirs = @('00-research-orchestrator','01-requirement-elicitation','02-research-reconnaissance','03-stage-planning-execution','04-literature-review','05-academic-writing','06-quality-gate','07-code-context','shared')
 if (-not (Test-Path -LiteralPath $SourceRoot -PathType Container)) { throw "正式源目录不存在：$SourceRoot" }
 New-Item -ItemType Directory -Force -Path $UserSkillsRoot | Out-Null
 foreach ($name in $skillDirs) {

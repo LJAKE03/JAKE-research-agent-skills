@@ -15,7 +15,7 @@ $tempParent = Join-Path ([IO.Path]::GetTempPath()) 'research-agent-file-tests'
 $testRoot = Join-Path $tempParent ([Guid]::NewGuid().ToString('N'))
 $fixtureRoot = Join-Path $testRoot 'source with spaces'
 $installedRoot = Join-Path $testRoot 'installed skills'
-$names = @('00-research-orchestrator','01-requirement-elicitation','02-research-reconnaissance','03-stage-planning-execution','04-literature-review','05-academic-writing','06-quality-gate','shared')
+$names = @('00-research-orchestrator','01-requirement-elicitation','02-research-reconnaissance','03-stage-planning-execution','04-literature-review','05-academic-writing','06-quality-gate','07-code-context','shared')
 
 function Assert-Test { param([bool]$Condition,[string]$Message); if(-not $Condition){throw "FAIL $Message"}; Write-Output "PASS $Message" }
 function Write-TestText {

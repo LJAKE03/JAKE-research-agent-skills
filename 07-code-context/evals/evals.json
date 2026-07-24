@@ -1,0 +1,38 @@
+{
+  "skill_name": "research-code-context",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "这个推进系统仿真仓库有两百多个 Python 文件。请追踪原始传感器 CSV 从读取、滤波、特征计算到故障分类器输入的跨文件路径，并给出复现时必须核对的实现位置；CodeGraph MCP 已配置且项目已建立索引。",
+      "expected_output": "优先进行一次有界 CodeGraph 探索，返回紧凑代码上下文胶囊，不重复扫描相同范围，并保留关键数据变换的定点验证目标。",
+      "files": [],
+      "expectations": [
+        "仅在多文件代码流问题上选择 CodeGraph",
+        "输出包含代码定位、关系摘要、新鲜度、限制和验证目标",
+        "不把静态调用关系提升为科学结论"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "请分析这个 CFD 后处理仓库中压力数据从 solver 输出到论文图 4 的处理链，但当前没有安装 CodeGraph，也不要替我安装任何软件。",
+      "expected_output": "明确记录工具不可用，并使用 rg、定点读取和已有测试或日志完成最低充分回退，不阻断任务或修改配置。",
+      "files": [],
+      "expectations": [
+        "CodeGraph 缺失时不安装、不初始化且不中断任务",
+        "回退到有界 rg 和定点读取",
+        "交接结果仍使用紧凑胶囊"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "我已经知道单位换算在 scripts/convert_units.py 的 convert_pressure 函数里，只确认它是否把 kPa 转成 Pa，并给出定位，不要分析整个仓库。",
+      "expected_output": "识别为已知单文件和符号的精确读取，直接使用原生读取，不调用 CodeGraph 或创建正式研究阶段。",
+      "files": [],
+      "expectations": [
+        "近失配场景不调用 CodeGraph",
+        "只读取已知函数的最小范围",
+        "不创建额外 Agent、阶段或长上下文"
+      ]
+    }
+  ]
+}
