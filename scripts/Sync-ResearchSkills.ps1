@@ -13,7 +13,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 if([string]::IsNullOrWhiteSpace($SourceRoot)){$SourceRoot=Split-Path -Parent $PSScriptRoot}
-$names=@('00-research-orchestrator','01-requirement-elicitation','02-research-reconnaissance','03-stage-planning-execution','04-literature-review','05-academic-writing','06-quality-gate','shared')
+$names=@('00-research-orchestrator','01-requirement-elicitation','02-research-reconnaissance','03-stage-planning-execution','04-literature-review','05-academic-writing','06-quality-gate','07-code-context','shared')
 function Copy-DirectoryContents {
   param([string]$Source,[string]$Destination)
   $items=@(Get-ChildItem -LiteralPath $Source -Force)

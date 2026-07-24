@@ -176,7 +176,7 @@ $templateAgentsPath = Join-Path $SourceRoot 'project-template\AGENTS.md'
 $templateAgentsText = Get-Content -Raw -Encoding UTF8 -LiteralPath $templateAgentsPath
 foreach($token in @('research-agent-routing:start','research-agent-routing:end','Sol','Terra','Luna','PowerShell','Python','`rg`','`git diff`','Get-Content -Encoding UTF8','紧凑交接 Schema')) { Test-Text $templateAgentsText ([regex]::Escape($token)) "template AGENTS $token" }
 
-foreach($skillName in @('00-research-orchestrator','01-requirement-elicitation','02-research-reconnaissance','03-stage-planning-execution','04-literature-review','05-academic-writing','06-quality-gate')) {
+foreach($skillName in @('00-research-orchestrator','01-requirement-elicitation','02-research-reconnaissance','03-stage-planning-execution','04-literature-review','05-academic-writing','06-quality-gate','07-code-context')) {
   $skillText = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot "$skillName\SKILL.md")
   Test-Text $skillText 'routing-preflight:required' "$skillName routing preflight"
   Test-Text $skillText '\.\./shared/MODEL_ROUTING\.json' "$skillName routing reference"
@@ -264,6 +264,20 @@ Test-Text $orchestrator 'codex --disable multi_agent exec.*--ephemeral.*--sandbo
 Test-Text $orchestrator 'Luna 使用相同命令但模型为 .*gpt-5\.6-luna.*reasoning 为 .*low' 'orchestrator isolated Luna dispatch'
 Test-Text $orchestrator '真实创建的子线程、成功的 spawn 工具结果.*一次性 .*codex exec' 'orchestrator runtime evidence rule'
 Test-Text $orchestrator 'degraded_sol_only' 'orchestrator transparent dispatch fallback'
+Test-Text $orchestrator '07-code-context/SKILL\.md' 'orchestrator code-context route'
+$codeContext = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '07-code-context\SKILL.md')
+foreach($token in @('codegraph_explore','rg --files','Code Context Capsule','freshness','verification_targets','STAGE_HANDOFF.schema.json','changed_files=[]')) {
+  Test-Text $codeContext ([regex]::Escape($token)) "code context $token"
+}
+Test-Text $codeContext '不自动安装|不要安装软件' 'code context never auto-installs backend'
+Test-Text $codeContext '回退流程' 'code context native fallback'
+Test-Text $codeContext '不是最终科学证据' 'code context scientific evidence boundary'
+Test-Text $codeContext '一次收窄重试是上限' 'code context bounded retry'
+Test-NoText $codeContext '(?m)^\s*(codegraph|npm|npx)\s+(install|init)' 'code context contains no installation command'
+$codeContextEvals = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '07-code-context\evals\evals.json') | ConvertFrom-Json
+Test-Value ([string]$codeContextEvals.skill_name) 'research-code-context' 'code context eval skill name'
+Test-Value (@($codeContextEvals.evals).Count) 3 'code context eval count'
+
 $academicWriting = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '05-academic-writing\SKILL.md')
 Test-Text $academicWriting '不得写成由用户显式选择模型、Agent 或模式' 'Luna routing wording acceptance'
 foreach($field in @('objective','input_locators','locked_decisions','output_contract','acceptance_checks','stop_conditions')) { Test-Text $orchestrator ([regex]::Escape($field)) "orchestrator task-card $field" }
