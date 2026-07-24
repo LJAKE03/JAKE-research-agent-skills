@@ -31,6 +31,7 @@ flowchart LR
 - `04-literature-review`：文献矩阵、主题综合和研究缺口；
 - `05-academic-writing`：基于锁定论点和证据包完成科研写作；
 - `06-quality-gate`：确定性、证据完整性和 Sol 语义验收。
+- `07-code-context`：为科研软件、仿真与数据流水线提供可选 CodeGraph 检索、紧凑代码上下文胶囊和原生工具回退。
 
 ## 紧凑上下文
 
@@ -67,6 +68,20 @@ flowchart LR
 - 建议 Sol 检查的下一动作。
 
 交接结构见 `shared/STAGE_HANDOFF.template.md` 和 `shared/STAGE_HANDOFF.schema.json`。
+
+## 可选科研代码上下文
+
+当科研任务需要理解本地多文件代码库的调用链、数据流、复现路径或改动影响时，总控可按需调用 `07-code-context`：
+
+- CodeGraph MCP 已配置且项目已索引：优先一次有界 `codegraph_explore`；
+- 工具缺失、无索引、结果过宽或存在陈旧提示：回退 `rg`、定点读取和已有测试；
+- 只向 Sol 返回代码定位、关系摘要、静态分析限制和验证目标，不返回完整工具输出；
+- 不自动安装或初始化 CodeGraph，不改变 Agent 配置，不启用遥测；
+- 关键方法、参数、数据转换和科学结论仍需精确源码或测试验证。
+
+CodeGraph 只可能降低代码探索 Token，不能替代文献、PDF、实验数据或论文证据预算。任何节省比例都必须通过目标仓库的有/无索引对照评测后再报告。
+
+
 
 ## 质量检查
 

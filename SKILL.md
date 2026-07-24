@@ -19,6 +19,7 @@ description: Entry index for the coordinated research Skills suite. For any nont
 - `04-literature-review`：文献矩阵、主题综合和研究缺口；
 - `05-academic-writing`：锁定论点和证据后的科研写作；
 - `06-quality-gate`：最低充分检查和 Sol 紧凑验收。
+- `07-code-context`：可选的科研代码跨文件检索、紧凑胶囊和确定性回退。
 
 统一协同规则：
 
@@ -29,3 +30,4 @@ description: Entry index for the coordinated research Skills suite. For any nont
 5. 只在真实依赖存在时形成阶段；简单任务直接完成。
 6. 质量强度内部自动选择；投稿、关键参数、核心方法和最终科学结论由 Sol 紧凑验收。
 7. 模型间不传递完整历史、全部工具日志或整篇原文。
+8. CodeGraph 仅作为已安装、已索引时的可选检索后端；不自动安装，不替代源码定点验证、文献、数据或实验。

@@ -16,6 +16,7 @@
 10. 投稿、关键参数、核心方法、安全/高成本和最终科学结论由 Sol 紧凑验收。
 11. Skill 使用问题写入 `SKILL_FEEDBACK.md`；项目特有规则写入 `PROJECT_OVERRIDES.md`。
 12. 未经用户确认，不修改公共稳定 Skill；不得虚构文献、数据、实验、结果或完成状态。
+13. 跨文件科研代码检索可调用已安装的 `07-code-context`；不得自动安装或初始化 CodeGraph，工具不可用、无索引或陈旧时回退 `rg`、定点读取和已有测试。
 
 <!-- research-agent-routing:start -->
 ## 科研 Skills 托管路由
