@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
-  "configuration_version": "1.2.0",
-  "model_mapping_version": "sol-terra-luna-unified-v2",
+  "configuration_version": "1.5.0",
+  "model_mapping_version": "sol-terra-luna-unified-v5",
   "provider": "ChatGPT Windows desktop app and Codex",
   "primary_surface": "project-scoped .codex agents",
   "verified_with": {
@@ -18,6 +18,18 @@
     "command": "codex debug models",
     "strategic_unavailable_status": "blocked_model_catalog",
     "support_or_economy_unavailable_status": "degraded_sol_only"
+  },
+  "runtime_dispatch": {
+    "support_agent_type": "research_support",
+    "economy_agent_type": "research_output",
+    "fork_turns": "none",
+    "preferred_call_shape": "agent_type",
+    "compatible_call_shape": "explicit_model",
+    "isolated_call_shape": "codex_exec",
+    "require_runtime_evidence": true,
+    "require_spawn_evidence": true,
+    "self_report_is_evidence": false,
+    "failure_status": "degraded_sol_only"
   },
   "tiers": {
     "strategic": {

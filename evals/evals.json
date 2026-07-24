@@ -1,5 +1,18 @@
 {
   "skill_name": "research-project-orchestrator",
+  "runtime_assertions": {
+    "worker_required_when_expected_workers_nonempty": true,
+    "support_agent_type": "research_support",
+    "economy_agent_type": "research_output",
+    "fork_turns": "none",
+    "preferred_call_shape": "agent_type",
+    "compatible_call_shape": "explicit_model",
+    "isolated_call_shape": "codex_exec",
+    "require_runtime_evidence": true,
+    "require_spawn_evidence": true,
+    "self_report_is_evidence": false,
+    "failure_status": "degraded_sol_only"
+  },
   "evals": [
     {
       "id": 1,

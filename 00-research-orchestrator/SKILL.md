@@ -57,7 +57,27 @@ Terra 和 Luna 可以指出缺口、冲突和不确定性，但不得替 Sol 做
 
 功能 Skill 完成后必须返回总控。Worker 不得互相转交或递归委派。
 
-## 5. 何时形成阶段
+## 5. 可执行委派契约
+
+职责表不是建议清单。当前任务命中以下条件且路由状态为 `ready` 时，Sol 必须实际调用子 Agent：
+
+- 调用前检查当前 `spawn_agent` 工具实际暴露的参数，不得假设所有 Codex 运行面使用同一调用形态；
+- 若支持 `agent_type`，证据任务调用 `spawn_agent(agent_type=research_support, fork_turns=none)`，写作任务调用 `spawn_agent(agent_type=research_output, fork_turns=none)`；角色 TOML 锁定模型和 reasoning，此形态不再传模型覆盖；
+- 若不支持 `agent_type`，但支持 `task_name`、`model`、`reasoning_effort` 和 `fork_turns`，证据任务调用 `spawn_agent(task_name=research_support, model=gpt-5.6-terra, reasoning_effort=medium, fork_turns=none)`，写作任务调用 `spawn_agent(task_name=research_output, model=gpt-5.6-luna, reasoning_effort=low, fork_turns=none)`；模型值只能来自已验证的 `MODEL_ROUTING.json`，不得自行替换；
+- 显式模型兼容形态没有角色 TOML 的强制只读保障时，任务卡必须写明不编辑文件、`changed_files` 为空、不得委派、不得越过科研判断边界；Sol 对返回结果做同样验收；
+- 若 spawn 工具不能锁定目标模型，但本机 `codex` 可用且模型目录验证通过，允许使用官方一次性适配：Terra 调用 `codex --disable multi_agent exec --strict-config --ephemeral --ignore-user-config --json --color never --sandbox read-only -m gpt-5.6-terra -c model_reasoning_effort="medium"`；Luna 使用相同命令但模型为 `gpt-5.6-luna`、reasoning 为 `low`。只通过标准输入传递紧凑任务卡，进程完成即退出；这不是常驻 Agent runtime；
+- 三种形态都只发送紧凑任务卡。spawn 形态等待子线程，`codex exec` 形态要求退出码为 0 且返回约定交接包；随后由 Sol 判断、验收并向用户答复。
+
+只有下列情况允许 Sol 不创建 Worker：
+
+- 任务属于第 2 节不可委派的科研判断；
+- 请求简单、低风险、无需检索或文件扫描，并且不是正式多段写作交付；
+- 路由预检明确返回 `degraded_sol_only`；
+- 当前运行面不支持两种 spawn 形态且官方一次性 `codex exec` 也不可用、目标模型不可用，或一次合规调用明确失败。
+
+真实创建的子线程、成功的 spawn 工具结果，或已锁定目标模型/reasoning 且退出码为 0、返回合规交接包的一次性 `codex exec` 才是运行证据。模型在正文中声称“已调用 Terra/Luna”不算证据。调用不可用或失败时，不得伪造 Worker 结果或反复重试；将当前任务标记为 `degraded_sol_only`，由 Sol 完成有界任务，并在最终答复中用一句话透明说明本轮发生了降级。用户仍不需要选择模型。
+
+## 6. 何时形成阶段
 
 只有存在不可并成一次交付的真实依赖时才调用 `03-stage-planning-execution`，例如：
 
@@ -68,7 +88,7 @@ Terra 和 Luna 可以指出缺口、冲突和不确定性，但不得替 Sol 做
 
 阶段数量由依赖决定，不设置默认数量。一次只激活一个核心工作包；独立、只读且输出互不冲突的支持任务才可并行。
 
-## 6. 紧凑任务卡与交接
+## 7. 紧凑任务卡与交接
 
 需要委派时，只发送当前 Worker 完成任务所需的信息：
 
@@ -105,7 +125,7 @@ Sol 交给 Luna 的输入必须已经锁定：
 
 Luna 可以组织语言和生成完整草稿，但不得新增事实、引用、数值、公式、因果关系或科研判断。
 
-## 7. 质量检查
+## 8. 质量检查
 
 质量强度是内部决策，不向用户暴露成工作模式：
 
@@ -115,7 +135,7 @@ Luna 可以组织语言和生成完整草稿，但不得新增事实、引用、
 
 投稿/申报、安全或高成本决策、关键参数、核心方法和最终科学结论必须执行 L2。L2 复用已有 L0/L1 摘要和定位，不重新加载全部原始材料，也不重写全文。
 
-## 8. 用户检查点
+## 9. 用户检查点
 
 以下高影响事项原则上交用户确认：
 
@@ -127,7 +147,7 @@ Luna 可以组织语言和生成完整草稿，但不得新增事实、引用、
 
 低风险、可逆工作在验证后可以连续推进，直到出现高影响决策、证据不足或不可逆操作。
 
-## 9. Token、成本与时间纪律
+## 10. Token、成本与时间纪律
 
 - 优先降低 Sol token 和总成本，而不是机械追求原始 token 最少；
 - Sol 只向 Terra 发送紧凑证据任务卡；Terra 只回证据表、定位和摘要；
@@ -136,7 +156,7 @@ Luna 可以组织语言和生成完整草稿，但不得新增事实、引用、
 - 大型结果写入文件，对话只显示结论、定位、未决项和下一动作；
 - 评价路由时同时记录 Sol token、总成本、有效交付时间和科研质量。
 
-## 10. 工具纪律
+## 11. 工具纪律
 
 按最少交互、最小输出、最低失败率和最易验证选择工具：优先 Codex 内置读取、搜索和精确补丁，其次 `rg`、`git` 和已有验证脚本，再按任务选择 PowerShell 或 Python。
 
@@ -148,12 +168,13 @@ Luna 可以组织语言和生成完整草稿，但不得新增事实、引用、
 - 连续两次同类失败后改变诊断方法；
 - Large results must be written to files.
 
-## 11. 禁止行为
+## 12. 禁止行为
 
 - 要求用户选择模型、Agent 或工作模式；
 - 为功能分类再增加一层 Agent、Reviewer Agent 或独立 Runtime；
 - 把完整对话、全部日志或整篇原文复制给 Worker；
 - 让 Terra 决定来源可靠性、研究路线或最终结论；
 - 让 Luna 在未锁定论点和证据时自由生成科研内容；
+- 只在文字中声称调用了 Worker，却没有真实子线程、成功 spawn，或锁定目标模型且返回合规交接包的一次性 `codex exec`；
 - 对同一交付物重复启动计划和审查；
 - 质量门发现重大问题后仍继续推进。

@@ -7,6 +7,6 @@
 # Sol; project-level app agents route support and economy work to Terra and Luna.
 model = "gpt-5.6-sol"
 
-# The profile is the balanced interactive default. The skill routes strategic
-# work to high/xhigh and mechanical work to low at task time.
-model_reasoning_effort = "high"
+# The profile pins the strategic root to xhigh. Project-scoped custom Agent
+# roles lock Terra to medium and Luna to low without per-task user selection.
+model_reasoning_effort = "xhigh"

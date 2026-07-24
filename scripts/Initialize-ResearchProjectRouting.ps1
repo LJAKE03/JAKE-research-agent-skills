@@ -12,12 +12,13 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$TemplateVersion = 'research-routing-v2'
+$TemplateVersion = 'research-routing-v5'
 $ManagedStart = '<!-- research-agent-routing:start -->'
 $ManagedEnd = '<!-- research-agent-routing:end -->'
 $Utf8NoBom = New-Object Text.UTF8Encoding($false)
 $changes = New-Object Collections.Generic.List[string]
 $conflicts = New-Object Collections.Generic.List[string]
+$backedUpFiles = @{}
 
 if ([string]::IsNullOrWhiteSpace($RepositoryRoot)) { $RepositoryRoot = Split-Path -Parent $PSScriptRoot }
 $RepositoryRoot = (Resolve-Path -LiteralPath $RepositoryRoot).ProviderPath
@@ -45,10 +46,11 @@ function Assert-HasProperties {
 
 function Assert-CanonicalRoutingContract {
   param([object]$Routing)
-  Assert-HasProperties $Routing 'root' @('schema_version','configuration_version','model_mapping_version','provider','primary_surface','verified_with','workflow','runtime_preflight','tiers','fallback','delegation','quality_gates')
+  Assert-HasProperties $Routing 'root' @('schema_version','configuration_version','model_mapping_version','provider','primary_surface','verified_with','workflow','runtime_preflight','runtime_dispatch','tiers','fallback','delegation','quality_gates')
   Assert-HasProperties $Routing.verified_with 'verified_with' @('command','codex_cli_version')
   Assert-HasProperties $Routing.workflow 'workflow' @('default','max_initial_blocking_questions','continue_low_risk_work_packages','sol_semantic_acceptance_when')
   Assert-HasProperties $Routing.runtime_preflight 'runtime_preflight' @('command','strategic_unavailable_status','support_or_economy_unavailable_status')
+  Assert-HasProperties $Routing.runtime_dispatch 'runtime_dispatch' @('support_agent_type','economy_agent_type','fork_turns','preferred_call_shape','compatible_call_shape','isolated_call_shape','require_runtime_evidence','require_spawn_evidence','self_report_is_evidence','failure_status')
   Assert-HasProperties $Routing.tiers 'tiers' @('strategic','support','economy')
   foreach($tierName in @('strategic','support','economy')) {
     Assert-HasProperties $Routing.tiers.$tierName "tiers.$tierName" @('model','reasoning_effort','sandbox_mode','purpose')
@@ -65,6 +67,7 @@ function Assert-CanonicalRoutingContract {
   $expectedAcceptanceWhen = @('publication_or_submission','key_parameter_or_core_method','safety_or_high_cost_decision','scientific_final_acceptance')
   if ([string]$Routing.workflow.default -ne 'unified' -or [int]$Routing.workflow.max_initial_blocking_questions -lt 0 -or [int]$Routing.workflow.max_initial_blocking_questions -gt 2 -or -not [bool]$Routing.workflow.continue_low_risk_work_packages -or (($acceptanceWhen -join '|') -ne ($expectedAcceptanceWhen -join '|'))) { throw 'canonical workflow contract is invalid' }
   if ([string]$Routing.runtime_preflight.command -ne 'codex debug models' -or [string]$Routing.runtime_preflight.strategic_unavailable_status -ne 'blocked_model_catalog' -or [string]$Routing.runtime_preflight.support_or_economy_unavailable_status -ne 'degraded_sol_only') { throw 'canonical runtime_preflight contract is invalid' }
+  if ([string]$Routing.runtime_dispatch.support_agent_type -ne 'research_support' -or [string]$Routing.runtime_dispatch.economy_agent_type -ne 'research_output' -or [string]$Routing.runtime_dispatch.fork_turns -ne 'none' -or [string]$Routing.runtime_dispatch.preferred_call_shape -ne 'agent_type' -or [string]$Routing.runtime_dispatch.compatible_call_shape -ne 'explicit_model' -or [string]$Routing.runtime_dispatch.isolated_call_shape -ne 'codex_exec' -or -not [bool]$Routing.runtime_dispatch.require_runtime_evidence -or -not [bool]$Routing.runtime_dispatch.require_spawn_evidence -or [bool]$Routing.runtime_dispatch.self_report_is_evidence -or [string]$Routing.runtime_dispatch.failure_status -ne 'degraded_sol_only') { throw 'canonical runtime_dispatch contract is invalid' }
 
   $expectedTierContract = @{
     strategic = @{ effort='xhigh'; sandbox='workspace-write' }
@@ -121,6 +124,10 @@ $ConfigurationVersion = [string]$CanonicalRouting.configuration_version
 $ModelMappingVersion = [string]$CanonicalRouting.model_mapping_version
 $MaxThreads = [int]$CanonicalRouting.delegation.max_threads
 $MaxDepth = [int]$CanonicalRouting.delegation.max_depth
+$StrategicModel = [string]$CanonicalRouting.tiers.strategic.model
+$StrategicEffort = [string]$CanonicalRouting.tiers.strategic.reasoning_effort
+$SupportAgentType = [string]$CanonicalRouting.runtime_dispatch.support_agent_type
+$EconomyAgentType = [string]$CanonicalRouting.runtime_dispatch.economy_agent_type
 $BlockedModelCatalogStatus = [string]$CanonicalRouting.runtime_preflight.strategic_unavailable_status
 $DegradedStatus = [string]$CanonicalRouting.runtime_preflight.support_or_economy_unavailable_status
 $CatalogCheck = Test-RoutingModelCatalog $CanonicalRouting
@@ -150,9 +157,12 @@ function Copy-IfMissing {
 
 function Backup-ManagedFile {
   param([string]$Path,[string]$Name)
+  $backupKey = [IO.Path]::GetFullPath($Path)
+  if ($backedUpFiles.ContainsKey($backupKey)) { return }
   if (-not (Test-Path -LiteralPath $BackupRoot -PathType Container)) { New-Item -ItemType Directory -Path $BackupRoot -Force | Out-Null }
   $stamp = Get-Date -Format 'yyyyMMdd-HHmmssfff'
   Copy-Item -LiteralPath $Path -Destination (Join-Path $BackupRoot "$Name.$stamp.bak")
+  $backedUpFiles[$backupKey] = $true
 }
 
 function Add-Conflict {
@@ -244,6 +254,86 @@ function Update-AgentConfig {
   }
 }
 
+function Update-ExecutableAgentConfig {
+  $source = Join-Path $TemplateRoot '.codex\config.toml'
+  $target = Join-Path $ProjectDirectory '.codex\config.toml'
+  if (-not (Test-Path -LiteralPath $target -PathType Leaf)) { return }
+  $raw = [IO.File]::ReadAllText($target)
+  if (@($conflicts | Where-Object { $_ -like '.codex/config.toml：*' }).Count -gt 0) { return }
+  $newline = if ($raw.Contains("`r`n")) { "`r`n" } else { "`n" }
+  $text = $raw -replace "`r`n","`n"
+  $changed = $false
+  $localConflict = $false
+
+  $firstSection = [regex]::Match($text,'(?m)^\s*\[')
+  $prefixEnd = if ($firstSection.Success) { $firstSection.Index } else { $text.Length }
+  $prefix = $text.Substring(0,$prefixEnd)
+  $prepend = New-Object Collections.Generic.List[string]
+  foreach($item in @(
+    @{Name='model';Value='"' + $StrategicModel + '"'},
+    @{Name='model_reasoning_effort';Value='"' + $StrategicEffort + '"'}
+  )) {
+    $match = [regex]::Match($prefix,('(?m)^\s*{0}\s*=\s*([^#\r\n]+)' -f [regex]::Escape([string]$item.Name)))
+    if (-not $match.Success) { $prepend.Add("$($item.Name) = $($item.Value)"); continue }
+    if ($match.Groups[1].Value.Trim() -ne $item.Value) {
+      $localConflict = $true
+      $conflicts.Add(".codex/config.toml：$($item.Name) 期望 $($item.Value)，现有值 $($match.Groups[1].Value.Trim())")
+      Write-Warning ".codex/config.toml：$($item.Name) 与托管路由冲突。未覆盖现有值。"
+    }
+  }
+  if ($prepend.Count -gt 0) { $text = ($prepend -join "`n") + "`n`n" + $text; $changed = $true }
+
+  $features = [regex]::Match($text,'(?m)^\s*\[features\]\s*$')
+  if (-not $features.Success) {
+    $text = $text.TrimEnd("`n") + "`n`n[features]`nmulti_agent = true`n"
+    $changed = $true
+  } else {
+    $after = $features.Index + $features.Length
+    $next = [regex]::Match($text.Substring($after),'(?m)^\s*\[[^\]]+\]\s*$')
+    $end = if ($next.Success) { $after + $next.Index } else { $text.Length }
+    $body = $text.Substring($after,$end-$after)
+    $setting = [regex]::Match($body,'(?m)^\s*multi_agent\s*=\s*([^#\r\n]+)')
+    if (-not $setting.Success) { $text = $text.Substring(0,$end).TrimEnd("`n") + "`nmulti_agent = true`n" + $text.Substring($end); $changed = $true }
+    elseif ($setting.Groups[1].Value.Trim() -ne 'true') {
+      $localConflict = $true
+      $conflicts.Add('.codex/config.toml：features.multi_agent 期望 true')
+      Write-Warning '.codex/config.toml：features.multi_agent 与托管路由冲突。未覆盖现有值。'
+    }
+  }
+
+  foreach($role in @(
+    @{Name=$SupportAgentType;File='agents/research-support.toml';Description='Read-only Terra worker for bounded evidence work.'},
+    @{Name=$EconomyAgentType;File='agents/research-output.toml';Description='Read-only Luna worker for locked-package writing.'}
+  )) {
+    $header = '[agents.' + [string]$role.Name + ']'
+    $match = [regex]::Match($text,('(?m)^\s*\[agents\.{0}\]\s*$' -f [regex]::Escape([string]$role.Name)))
+    if (-not $match.Success) {
+      $text = $text.TrimEnd("`n") + "`n`n$header`ndescription = `"$($role.Description)`"`nconfig_file = `"$($role.File)`"`n"
+      $changed = $true
+      continue
+    }
+    $after = $match.Index + $match.Length
+    $next = [regex]::Match($text.Substring($after),'(?m)^\s*\[[^\]]+\]\s*$')
+    $end = if ($next.Success) { $after + $next.Index } else { $text.Length }
+    $body = $text.Substring($after,$end-$after)
+    $configFile = [regex]::Match($body,'(?m)^\s*config_file\s*=\s*"([^"]+)"')
+    if (-not $configFile.Success) { $text = $text.Substring(0,$end).TrimEnd("`n") + "`nconfig_file = `"$($role.File)`"`n" + $text.Substring($end); $changed = $true }
+    elseif ($configFile.Groups[1].Value -ne [string]$role.File) {
+      $localConflict = $true
+      $conflicts.Add(".codex/config.toml：$header.config_file 期望 $($role.File)，现有值 $($configFile.Groups[1].Value)")
+      Write-Warning ".codex/config.toml：$header.config_file 与托管路由冲突。未覆盖现有值。"
+    }
+  }
+
+  if ($localConflict) { Add-Conflict '.codex/config.toml' '可执行模型或 Agent 注册存在冲突' $source }
+  $updated = $text -replace "`n",$newline
+  if (-not $localConflict -and $changed -and $updated -ne $raw) {
+    Backup-ManagedFile $target 'config.toml'
+    Write-Utf8Text $target $updated
+    $changes.Add('.codex/config.toml executable routing merged')
+  }
+}
+
 function Test-AgentFile {
   param([string]$Text,[string]$Name,[string]$Model,[string]$Effort,[string]$Sandbox)
   return $Text -match ('(?m)^name\s*=\s*"{0}"\s*$' -f [regex]::Escape($Name)) -and
@@ -266,10 +356,11 @@ function Test-CompatibleRoutingSnapshot {
   if ($null -eq $threadsProperty -or [int]$threadsProperty.Value -ne $MaxThreads) { return $false }
   $depthProperty = $snapshot.delegation.PSObject.Properties['max_depth']
   if ($null -eq $depthProperty -or [int]$depthProperty.Value -ne $MaxDepth) { return $false }
-  return -not [bool]$snapshot.delegation.subagents_may_delegate -and [bool]$snapshot.delegation.main_agent_final_review
+  return -not [bool]$snapshot.delegation.subagents_may_delegate -and [bool]$snapshot.delegation.main_agent_final_review -and [string]$snapshot.runtime_dispatch.support_agent_type -eq 'research_support' -and [string]$snapshot.runtime_dispatch.economy_agent_type -eq 'research_output' -and [string]$snapshot.runtime_dispatch.fork_turns -eq 'none' -and [string]$snapshot.runtime_dispatch.preferred_call_shape -eq 'agent_type' -and [string]$snapshot.runtime_dispatch.compatible_call_shape -eq 'explicit_model' -and [string]$snapshot.runtime_dispatch.isolated_call_shape -eq 'codex_exec' -and [bool]$snapshot.runtime_dispatch.require_runtime_evidence -and [bool]$snapshot.runtime_dispatch.require_spawn_evidence -and -not [bool]$snapshot.runtime_dispatch.self_report_is_evidence
 }
 
 Update-AgentConfig
+Update-ExecutableAgentConfig
 
 foreach($agent in @(
   @{File='research-support.toml';Name='research_support';Tier='support'},

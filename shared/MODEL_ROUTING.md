@@ -3,7 +3,7 @@
 ## 已验证能力
 
 - `codex-cli 0.144.1` 的模型目录包含 `gpt-5.6-sol`、`gpt-5.6-terra` 和 `gpt-5.6-luna`。
-- 项目级 `.codex/config.toml` 限制 `max_threads=2`、`max_depth=1`。
+- 项目级 `.codex/config.toml` 固定 Sol/`xhigh`、启用 multi-agent、注册两个专用角色，并限制 `max_threads=2`、`max_depth=1`。
 - `research-support` 使用 Terra/`medium`/只读；`research-output` 使用 Luna/`low`/只读。
 - `shared/MODEL_ROUTING.json` 是唯一 canonical JSON；项目快照必须与其 SHA256 一致。
 - Sol 或模型目录无法验证时阻断启动；仅 Terra/Luna 缺失时进入 `degraded_sol_only`，由 Sol 直接完成对应工作。
@@ -20,7 +20,15 @@
 
 ## 委派边界
 
-- Sol 先形成紧凑任务卡，再决定是否委派。
+- 项目配置固定根任务为 `gpt-5.6-sol`/`xhigh`，并显式启用 multi-agent。
+- `research_support` 和 `research_output` 必须在 `[agents.<name>]` 中用 `config_file` 注册，确保 spawn 工具能看到角色及其锁定模型。
+- 命中 Terra/Luna 条件且状态为 `ready` 时必须实际委派，并先检查当前 `spawn_agent` 参数形态。
+- 支持 `agent_type` 时分别使用 `research_support` 或 `research_output`，由角色 TOML 锁定模型和 reasoning；不支持 `agent_type` 时使用 `task_name` 加 canonical 中的 Terra/Luna `model`、`reasoning_effort`，两种形态均设置 `fork_turns=none`。
+- 显式模型形态的任务卡必须重申只读、禁止递归委派和紧凑交接边界。
+- 若 spawn 无法锁定目标模型，使用官方一次性 `codex exec`：禁用 multi-agent、启用 ephemeral 和 read-only sandbox，并用 `-m` 与 `model_reasoning_effort` 锁定 canonical 模型；只传紧凑任务卡，完成即退出，不建立独立 runtime。
+- 只有真实子线程、成功的 spawn 工具结果，或锁定目标模型且退出码为 0 且返回合规交接包的一次性 `codex exec` 才算运行证据；正文自述不算。
+- 三种形态都不可用、目标模型不可用或一次合规调用失败时标记 `degraded_sol_only`，由 Sol 完成有界任务并透明说明。
+- Sol 先形成紧凑任务卡；命中 Terra/Luna 条件时按上述 Agent 类型实际委派。
 - Terra 只返回证据包，不裁决研究方向、方法、参数、来源可靠性或最终结论。
 - Luna 只接收完整锁定写作包，可以生成草稿，但不得新增事实、引用、公式、因果关系或科研判断。
 - Worker 不得递归创建 Worker，也不得互相转交。

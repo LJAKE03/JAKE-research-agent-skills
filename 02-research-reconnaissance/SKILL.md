@@ -18,7 +18,15 @@ description: Use whenever a research project needs current or niche information,
 - 哪些条件不同，不能直接照搬？
 - 当前项目能够从中得到什么可执行改进？
 
-## 2. 必须联网的情况
+## 2. 执行身份与委派
+
+- 如果当前 Agent 是 `research_support`，根据收到的紧凑证据任务卡执行本 Skill，完成后把证据包返回 Sol，不再创建 Worker。
+- 如果当前 Agent 是 Sol，先限定检索问题、输入定位、输出字段、验收和停止条件；路由状态为 `ready` 时必须创建专用 Worker，不得由 Sol 自己完成整段检索、扫描或证据表工作。
+- 当前工具支持 `agent_type` 时调用 `spawn_agent(agent_type=research_support, fork_turns=none)`；不支持 `agent_type` 但支持显式模型参数时，调用 `spawn_agent(task_name=research_support, model=gpt-5.6-terra, reasoning_effort=medium, fork_turns=none)`，并在任务卡中重申只读、无递归委派和证据交接边界。
+- 两种 spawn 形态都不能锁定 Terra 时，若 `codex` 和经验证的 Terra 模型可用，则以 `--disable multi_agent`、`--ephemeral`、`--sandbox read-only`、`-m gpt-5.6-terra`、`model_reasoning_effort="medium"` 启动一次性 `codex exec`，只传紧凑证据任务卡并要求 `evidence_pack`。
+- 只有三种调用形态都不可用、目标模型不可用或一次合规调用明确失败时，才返回 `degraded_sol_only`，再由 Sol 完成当前有界任务；不得声称已经调用 Terra。
+
+## 3. 必须联网的情况
 
 - 用户要求搜索、核实、最新信息或文献支撑；
 - 信息可能随时间变化；
@@ -27,7 +35,7 @@ description: Use whenever a research project needs current or niche information,
 - 提到不熟悉或可能有歧义的术语；
 - 需要查看特定网页、论文、报告、数据集或 GitHub 项目。
 
-## 3. 检索层次
+## 4. 检索层次
 
 按需要组合，不机械凑数：
 
@@ -37,7 +45,7 @@ description: Use whenever a research project needs current or niche information,
 4. **相似案例层**：其他行业或对象中结构相似、问题机制相似的项目。
 5. **工程实现层**：开源仓库、技术报告、真实项目工作流、评价指标和失败经验。
 
-## 4. 搜索前定义问题
+## 5. 搜索前定义问题
 
 先写检索问题：
 
@@ -52,7 +60,7 @@ description: Use whenever a research project needs current or niche information,
 
 避免只搜索用户原句。为每个核心概念设计同义词、上位词、下位词和英文关键词。
 
-## 5. 来源优先级
+## 6. 来源优先级
 
 优先：
 
@@ -69,14 +77,14 @@ description: Use whenever a research project needs current or niche information,
 - 无法追溯原始数据的二手结论；
 - 只提供结论而没有方法和条件的内容。
 
-## 6. 学习迁移矩阵
+## 7. 学习迁移矩阵
 
 | 案例/来源 | 原任务与条件 | 使用方法 | 成功证据 | 可直接借鉴 | 必须适配 | 不应照搬 | 对本项目建议 |
 |---|---|---|---|---|---|---|---|
 
 “借鉴”指学习其结构、方法、评价体系和验证逻辑，不是复制文本、数据或结论。
 
-## 7. 证据标记
+## 8. 证据标记
 
 所有关键结论标记为：
 
@@ -88,13 +96,13 @@ description: Use whenever a research project needs current or niche information,
 
 涉及数值时同时记录：数值、单位、测试条件、适用范围、来源、是否可直接用于当前项目。
 
-## 8. 文档和 PDF
+## 9. 文档和 PDF
 
 - 对 PDF 中的图、表、流程图和扫描内容，必须查看对应页面图像，不能只依赖文本提取。
 - 对论文方法、实验条件和结论要同时核对，禁止脱离工况引用单一数值。
 - 对软件帮助文档，优先查官方版本和对应版本号。
 
-## 9. 输出：Research Reconnaissance Pack
+## 10. 输出：Research Reconnaissance Pack
 
 ```markdown
 # Research Reconnaissance Pack
@@ -136,6 +144,6 @@ description: Use whenever a research project needs current or niche information,
 - 建议下一 Skill：
 ```
 
-## 10. 返回规则
+## 11. 返回规则
 
 完成证据包后返回总控。不要替总控决定最终技术路线；应给出有证据的推荐和备选项。
