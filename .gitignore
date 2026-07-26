@@ -5,6 +5,7 @@ backups/*.tar
 backups/*.gz
 
 # Machine-specific and temporary files.
+scripts/research-launcher-settings.json
 *.tmp
 *.temp
 *.log

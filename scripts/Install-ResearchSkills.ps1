@@ -22,8 +22,15 @@ foreach ($name in $skillDirs) {
   if (-not (Test-Path -LiteralPath $source -PathType Container)) { throw "源目录不存在：$source" }
   if (Test-Path -LiteralPath $target) {
     $item = Get-Item -LiteralPath $target -Force
-    $resolved = try { (Resolve-Path -LiteralPath $target -ErrorAction Stop).Path } catch { '' }
-    $sourceResolved = (Resolve-Path -LiteralPath $source).Path
+    $sourceResolved = [IO.Path]::GetFullPath((Resolve-Path -LiteralPath $source).ProviderPath).TrimEnd('\')
+    $resolved = ''
+    foreach ($linkTarget in @($item.Target)) {
+      if ([string]::IsNullOrWhiteSpace([string]$linkTarget)) { continue }
+      $candidate = [string]$linkTarget
+      if (-not [IO.Path]::IsPathRooted($candidate)) { $candidate = Join-Path $item.Parent.FullName $candidate }
+      try { $candidate = [IO.Path]::GetFullPath($candidate).TrimEnd('\') } catch { continue }
+      if ($candidate.Equals($sourceResolved, [StringComparison]::OrdinalIgnoreCase)) { $resolved = $sourceResolved; break }
+    }
     if ($item.LinkType -and $resolved -eq $sourceResolved) { Write-Output "SKIP $name (已链接到正式源)"; continue }
     Write-Warning "CONFLICT $target 已存在且不是本套件确认的链接；为避免覆盖，跳过。"
     continue

@@ -33,6 +33,17 @@ try {
   $hiddenPath=Join-Path $fixtureRoot 'shared\.hidden-marker'
   Write-TestText $hiddenPath "hidden`n"
   [IO.File]::SetAttributes($hiddenPath,[IO.FileAttributes]::Hidden)
+  $junctionRoot=Join-Path $testRoot 'junction skills'
+  $installScript=Join-Path $SourceRoot 'scripts\Install-ResearchSkills.ps1'
+  $null=@(& $installScript -SourceRoot $fixtureRoot -UserSkillsRoot $junctionRoot)
+  $junctions=@($names|Where-Object {(Get-Item -LiteralPath (Join-Path $junctionRoot $_) -Force).LinkType -eq 'Junction'})
+  if($junctions.Count -eq $names.Count){
+    $secondInstall=@(& $installScript -SourceRoot $fixtureRoot -UserSkillsRoot $junctionRoot *>&1|ForEach-Object {[string]$_})
+    Assert-Test (@($secondInstall|Where-Object {$_ -like 'SKIP *'}).Count -eq $names.Count) 'installer skips every existing managed junction on a second run'
+    Assert-Test (@($secondInstall|Where-Object {$_ -like '*CONFLICT*'}).Count -eq 0) 'installer does not report correct junctions as conflicts'
+  } else { Write-Output 'SKIP junction idempotence assertions (Junction creation unavailable)' }
+
+
 
   $syncOutput=@(& $syncScript -SourceRoot $fixtureRoot -UserSkillsRoot $installedRoot)
   Assert-Test ($syncOutput.Count -eq $names.Count) 'sync reports every managed directory'
