@@ -175,6 +175,12 @@ if (Test-Path -LiteralPath $managedRoutingPath) {
 $templateAgentsPath = Join-Path $SourceRoot 'project-template\AGENTS.md'
 $templateAgentsText = Get-Content -Raw -Encoding UTF8 -LiteralPath $templateAgentsPath
 foreach($token in @('research-agent-routing:start','research-agent-routing:end','Sol','Terra','Luna','PowerShell','Python','`rg`','`git diff`','Get-Content -Encoding UTF8','紧凑交接 Schema')) { Test-Text $templateAgentsText ([regex]::Escape($token)) "template AGENTS $token" }
+foreach($relativeStatePath in @('project-template\PROJECT_STATE.md','shared\PROJECT_STATE.template.md')) {
+  $stateTemplateText = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot $relativeStatePath)
+  Test-Text $stateTemplateText '统一科研流程' "$relativeStatePath unified workflow"
+  Test-NoText $stateTemplateText '平衡快速|简单快车道|运行模式：.*严格' "$relativeStatePath has no legacy workflow mode"
+}
+
 
 foreach($skillName in @('00-research-orchestrator','01-requirement-elicitation','02-research-reconnaissance','03-stage-planning-execution','04-literature-review','05-academic-writing','06-quality-gate','07-code-context')) {
   $skillText = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot "$skillName\SKILL.md")
@@ -308,6 +314,31 @@ Test-NoText ($suiteIndex + $routingExamples) '\bFast\b|\bStandard\b|\bStrict\b(?
 $qualityRubric=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot 'shared\QUALITY_RUBRIC.md')
 Test-Text $qualityRubric '完整历史、全部日志或整篇原文' 'quality rubric compact context'
 $launcherText=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot 'scripts\Start-ResearchAgent.ps1')
+$gitIgnoreText=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '.gitignore')
+Test-Text $gitIgnoreText '(?m)^scripts/research-launcher-settings\.json\r?$' 'runtime launcher settings ignored'
+Test-NoText $gitIgnoreText '(?m)^scripts/research-launcher-settings\.example\.json\r?$' 'example launcher settings remain trackable'
+$settingsExamplePath=Join-Path $SourceRoot 'scripts\research-launcher-settings.example.json'
+$settingsExampleText=Get-Content -Raw -Encoding UTF8 -LiteralPath $settingsExamplePath
+$settingsExample=$settingsExampleText|ConvertFrom-Json
+foreach($field in @('RecentProjectPath','RecentProjects','DefaultProjectDirectory','LastUsedAt')) {
+  Test-Text $settingsExampleText ('"'+[regex]::Escape($field)+'"') "launcher settings example $field"
+}
+Test-Value ([string]$settingsExample.RecentProjectPath) '' 'launcher settings example recent project empty'
+Test-Value (@($settingsExample.RecentProjects).Count) 0 'launcher settings example recent list empty'
+Test-Value ([string]$settingsExample.DefaultProjectDirectory) '' 'launcher settings example default directory empty'
+Test-Value ([string]$settingsExample.LastUsedAt) '' 'launcher settings example timestamp empty'
+Test-NoText $settingsExampleText '(?i)([A-Z]:[\\/]|/Users/|\\\\[^\\])' 'launcher settings example contains no absolute machine path'
+$gitCommand=Get-Command git -ErrorAction SilentlyContinue
+if($null -eq $gitCommand -or -not(Test-Path -LiteralPath (Join-Path $SourceRoot '.git'))) {
+  Add-Result SKIP 'runtime launcher settings untracked' 'Git metadata unavailable'
+  Add-Result SKIP 'example launcher settings trackable' 'Git metadata unavailable'
+} else {
+  & git -C $SourceRoot check-ignore --quiet -- 'scripts/research-launcher-settings.example.json'
+  $exampleIgnoreExit=$LASTEXITCODE
+  Add-Result $(if($exampleIgnoreExit -eq 1){'PASS'}else{'FAIL'}) 'example launcher settings trackable' 'git check-ignore must report the example as not ignored'
+  $trackedSettings=@(& git -C $SourceRoot ls-files -- 'scripts/research-launcher-settings.json')
+  Add-Result $(if($LASTEXITCODE -eq 0 -and $trackedSettings.Count -eq 0){'PASS'}else{'FAIL'}) 'runtime launcher settings untracked' 'git ls-files must return no runtime settings file'
+}
 Test-Text $launcherText '一条统一科研流程' 'launcher unified workflow'
 Test-Text $launcherText '(?s)Sol.*Terra.*Luna' 'launcher automatic model responsibilities'
 Test-Text $launcherText 'Worker 不互相转交' 'launcher single-hop boundary'
