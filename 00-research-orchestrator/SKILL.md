@@ -8,6 +8,8 @@ description: Mandatory entry and return point for any nontrivial research projec
 <!-- routing-preflight:required -->
 开始科研任务前读取 `../shared/MODEL_ROUTING.json`。它只定义 Sol、Terra、Luna 的真实模型映射和委派边界，不定义面向用户的工作模式。
 
+当任务涉及多来源、多文件、长日志、跨阶段交接或正式科研写作时，再读取 `../shared/CONTEXT_EFFICIENCY_PROTOCOL.md`；简单问答和已知单点读取不额外加载。
+
 ## 1. 核心目标
 
 维持一条连续科研流程，并根据当前工作的性质自动调用功能 Skill 和模型层：
@@ -151,6 +153,9 @@ Luna 可以组织语言和生成完整草稿，但不得新增事实、引用、
 ## 10. Token、成本与时间纪律
 
 - 优先降低 Sol token 和总成本，而不是机械追求原始 token 最少；
+- 按共享协议的上下文获取阶梯先复用定位、提纲和精确片段，证据不足才扩展关系邻域或全文；
+- 对跨轮和跨 Agent 内容维护轻量上下文账本，未变化内容只交付定位或结论编号，变化内容只重验受影响部分；
+- 长材料可以可逆省略，但公式、单位、数值、工况、参数、异常和支撑最终结论的关键实现属于科研无损区；
 - Sol 只向 Terra 发送紧凑证据任务卡；Terra 只回证据表、定位和摘要；
 - Sol 只向 Luna 发送锁定写作包；Luna 不接收完整研究历史；
 - 不为每个小动作重复规划、状态更新或质量报告；

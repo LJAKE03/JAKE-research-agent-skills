@@ -13,6 +13,8 @@
 
 禁止附带完整对话、全部项目历史、全部工具日志或可通过定位读取的整篇原文。
 
+多来源、多文件、长日志或跨阶段任务同时遵循 `CONTEXT_EFFICIENCY_PROTOCOL.md`。先复用新鲜定位，只补充当前缺口；摘要必须可恢复，科研无损区必须保留精确值、条件和来源。
+
 ### Terra 任务卡
 
 限定检索范围、资料类型、字段、来源要求和停止条件。Terra 返回证据表、定位、缺口和可观察摘要，不做可靠性裁决或科学综合。
@@ -34,5 +36,7 @@
 - `uncertainties`：缺口、冲突和待 Sol 决定事项；
 - `changed_files`：只读 Worker 必须为空；
 - `next_action`：返回 Sol 后的唯一建议动作。
+
+需要记录重复交付或省略风险时，在现有 `deliverable` 文本内部附加共享协议定义的 Context Receipt；不得给 JSON handoff 增加 Schema 未允许的顶层字段。
 
 Worker 不得直接联系另一个 Worker，不得自行进入下一阶段。

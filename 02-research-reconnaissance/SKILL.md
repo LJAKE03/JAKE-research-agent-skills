@@ -45,6 +45,8 @@ description: Use whenever a research project needs current or niche information,
 4. **相似案例层**：其他行业或对象中结构相似、问题机制相似的项目。
 5. **工程实现层**：开源仓库、技术报告、真实项目工作流、评价指标和失败经验。
 
+涉及多来源或长文档时遵循 `../shared/CONTEXT_EFFICIENCY_PROTOCOL.md`：先复用已验收的来源定位和证据编号，只补读当前缺口；未变化来源不得重复摘录。摘要必须保留恢复定位，数值、单位、工况、否定结果和支撑最终结论的原始证据进入科研无损区。
+
 ## 5. 搜索前定义问题
 
 先写检索问题：

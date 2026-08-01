@@ -276,16 +276,29 @@ Test-Text $codeContext '一次收窄重试是上限' 'code context bounded retry
 Test-NoText $codeContext '(?m)^\s*(codegraph|npm|npx)\s+(install|init)' 'code context contains no installation command'
 $codeContextEvals = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '07-code-context\evals\evals.json') | ConvertFrom-Json
 Test-Value ([string]$codeContextEvals.skill_name) 'research-code-context' 'code context eval skill name'
-Test-Value (@($codeContextEvals.evals).Count) 3 'code context eval count'
+Test-Value (@($codeContextEvals.evals).Count) 6 'code context eval count'
+
+$contextEfficiency = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot 'shared\CONTEXT_EFFICIENCY_PROTOCOL.md')
+foreach($token in @('上下文获取阶梯','上下文账本','可逆省略','科研无损区','最小实现阶梯','停止条件','new / reused / changed / omitted','不得声称固定节省比例')) {
+  Test-Text $contextEfficiency ([regex]::Escape($token)) ('context efficiency ' + $token)
+}
+Test-NoText $contextEfficiency '(?m)^\s*(pip|uv|npm|npx|headroom|jcodemunch|codegraph)\s+(install|init|wrap|deploy)' 'context efficiency installs no external runtime'
+Test-Text $orchestrator 'CONTEXT_EFFICIENCY_PROTOCOL\.md' 'orchestrator context efficiency reference'
+$reconnaissance = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '02-research-reconnaissance\SKILL.md')
+Test-Text $reconnaissance 'CONTEXT_EFFICIENCY_PROTOCOL\.md' 'reconnaissance context efficiency reference'
+Test-Text $codeContext 'CONTEXT_EFFICIENCY_PROTOCOL\.md' 'code context efficiency reference'
+Test-Text $handoffTemplate 'CONTEXT_EFFICIENCY_PROTOCOL\.md' 'handoff context efficiency reference'
 
 $academicWriting = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '05-academic-writing\SKILL.md')
 Test-Text $academicWriting '不得写成由用户显式选择模型、Agent 或模式' 'Luna routing wording acceptance'
+Test-Text $academicWriting 'CONTEXT_EFFICIENCY_PROTOCOL\.md' 'academic writing context efficiency reference'
 foreach($field in @('objective','input_locators','locked_decisions','output_contract','acceptance_checks','stop_conditions')) { Test-Text $orchestrator ([regex]::Escape($field)) "orchestrator task-card $field" }
 Test-NoText $orchestrator '\bFast\b|\bStandard\b|\bStrict\b(?!-)|\bExploratory\b|\bDirect\b|\bFocused\b|Open Research|CAPABILITY_MANIFEST|RUNTIME_POLICY|Write-ResearchRuntimeEvent' 'no public lanes or runtime framework'
 $qualityGate=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '06-quality-gate\SKILL.md')
 foreach($gate in @('L0','L1','L2')) { Test-Text $qualityGate ([regex]::Escape($gate)) "quality gate $gate" }
 Test-Text $qualityGate 'Sol 只做一次紧凑语义验收' 'compact Sol acceptance'
 Test-Text $qualityGate '不新增独立 Reviewer Agent' 'quality gate no extra reviewer'
+Test-Text $qualityGate 'CONTEXT_EFFICIENCY_PROTOCOL\.md' 'quality gate context efficiency reference'
 $stagePlanning=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '03-stage-planning-execution\SKILL.md')
 Test-Text $stagePlanning '真实依赖' 'dependency-driven planning'
 Test-Text $stagePlanning '不设置默认阶段数' 'no fixed stage count'

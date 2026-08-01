@@ -21,6 +21,8 @@ description: Entry index for the coordinated research Skills suite. For any nont
 - `06-quality-gate`：最低充分检查和 Sol 紧凑验收。
 - `07-code-context`：可选的科研代码跨文件检索、紧凑胶囊和确定性回退。
 
+跨来源、跨文件、长日志、跨阶段或正式写作任务按需读取 `shared/CONTEXT_EFFICIENCY_PROTOCOL.md`；它是共享规则，不是新的顶层 Skill。
+
 统一协同规则：
 
 1. Sol 始终负责理解、规划、方法、证据综合和关键科研判断。
@@ -31,3 +33,4 @@ description: Entry index for the coordinated research Skills suite. For any nont
 6. 质量强度内部自动选择；投稿、关键参数、核心方法和最终科学结论由 Sol 紧凑验收。
 7. 模型间不传递完整历史、全部工具日志或整篇原文。
 8. CodeGraph 仅作为已安装、已索引时的可选检索后端；不自动安装，不替代源码定点验证、文献、数据或实验。
+9. 上下文先复用、再定点补读；摘要必须可恢复，科研关键数值、单位、条件、参数和异常不得有损交接。
