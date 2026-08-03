@@ -87,6 +87,7 @@ catch {
 }
 
 foreach ($relativePath in @(
+    'scripts\research-launcher-settings.example.json',
     '07-code-context\evals\evals.json',
     'shared\PROJECT_STATE.template.md',
     'shared\STAGE_HANDOFF.template.md',

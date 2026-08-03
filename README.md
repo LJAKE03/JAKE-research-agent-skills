@@ -133,6 +133,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\New-ResearchProjec
 ```
 
 创建。项目特殊规则写入 `PROJECT_OVERRIDES.md`，不要修改公共 Skill。
+启动器的 `scripts/research-launcher-settings.json` 是本机运行状态，首次启动时自动创建且不进入 Git；仓库只提供不含真实路径的 `.example.json`。
+
 
 ## 验证
 

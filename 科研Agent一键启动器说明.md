@@ -20,7 +20,7 @@
 
 ## 配置与安全性
 
-scripts\research-launcher-settings.json 只保存最近项目路径（最多 10 个）、默认项目目录和最后使用时间，不保存账号、密码或 Token。配置损坏、字段类型错误或项目路径失效时，会安全恢复和清理。
+`scripts\research-launcher-settings.json` 是首次运行时自动创建的本机配置，并被 Git 忽略；仓库只跟踪不含真实路径的 `scripts\research-launcher-settings.example.json`。运行配置只保存最近项目路径（最多 10 个）、默认项目目录和最后使用时间，不保存账号、密码或 Token。配置损坏、字段类型错误或项目路径失效时，会安全恢复和清理。
 
 启动器通过 Windows 已注册的 Codex Desktop 应用入口打开图形界面，不调用 WindowsApps 中不可作为终端使用的 codex.exe，也不使用 --yolo、--dangerously-bypass-approvals-and-sandbox 或 danger-full-access。Desktop 目前没有可验证的稳定参数可同时预填项目目录和多行 Prompt，因此启动器不猜测深度链接：它只自动复制 Prompt，避免把项目或任务发送到错误位置。
 
