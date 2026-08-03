@@ -33,7 +33,7 @@
 ## Git 与评审追溯
 
 - 发布分支：`agent/native-consistency-history`
-- GitHub PR：创建后补充
+- GitHub PR：[#12 Enforce traceable native consistency](https://github.com/LJAKE03/JAKE-research-agent-skills/pull/12)
+- 核心实现提交：[`4c9e151`](https://github.com/LJAKE03/JAKE-research-agent-skills/commit/4c9e151)
 - 设计提案：[2026-08-native-consistency-and-traceability.md](../skill-development/proposals/2026-08-native-consistency-and-traceability.md)
 - 版本摘要：[CHANGELOG.md](../CHANGELOG.md)
-
