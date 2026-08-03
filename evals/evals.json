@@ -121,6 +121,33 @@
       "requires_stage_plan": false,
       "risk_level": "high",
       "expected_behavior": ["不把未锁定任务交给Luna", "先由Sol确认论点和证据缺口", "需要时让Terra整理证据", "不得虚构Discussion结论"]
+    },
+    {
+      "id": 13,
+      "prompt": "继续昨天的催化剂证据整理：三篇论文的 DOI、工况和关键数值已经确认且文件没有变化，只补充新找到的两篇论文，不要重新摘录旧三篇。",
+      "expected_workers": ["terra"],
+      "expected_review": "terra_provenance",
+      "requires_stage_plan": false,
+      "risk_level": "medium",
+      "expected_behavior": ["复用已确认的旧证据定位", "上下文账本把旧证据标为reused", "只提取两篇新增论文", "不重复交付未变化内容"]
+    },
+    {
+      "id": 14,
+      "prompt": "把这份五万行 Fluent 日志压缩成发散诊断摘要，但迭代步、残差数值、单位、边界条件、首个异常位置和原始日志路径必须能精确恢复。",
+      "expected_workers": ["terra"],
+      "expected_review": "sol_semantic",
+      "requires_stage_plan": false,
+      "risk_level": "high",
+      "expected_behavior": ["长日志使用可逆省略", "科研无损区保留关键数值单位和条件", "记录原始定位与未覆盖范围", "Sol不把摘要直接当最终科学证据"]
+    },
+    {
+      "id": 15,
+      "prompt": "给现有科研数据管线增加一个单位检查。先确认项目里是否已有校验函数、标准库或现有依赖能完成；只有都不适用时才写最小的新实现，并保留异常处理。",
+      "expected_workers": ["terra"],
+      "expected_review": "sol_semantic",
+      "requires_stage_plan": false,
+      "risk_level": "medium",
+      "expected_behavior": ["先定位并复用已有能力", "按最小实现阶梯选择方案", "不为少写代码删除异常处理和单位验证", "只读取和修改必要文件"]
     }
   ]
 }

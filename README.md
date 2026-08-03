@@ -69,6 +69,18 @@ flowchart LR
 
 交接结构见 `shared/STAGE_HANDOFF.template.md` 和 `shared/STAGE_HANDOFF.schema.json`。
 
+### 上下文效率协议
+
+多来源、多文件、长日志、跨阶段或正式写作任务按需加载 `shared/CONTEXT_EFFICIENCY_PROTOCOL.md`：
+
+- 按“已有定位 → 元数据/提纲 → 精确片段/符号 → 必要关系邻域 → 有理由的全文”逐级获取；
+- 通过任务内上下文账本区分 new、reused、changed 和 omitted，避免未变化内容重复交付；
+- 长材料采用可逆省略，保留恢复定位、覆盖范围、未覆盖范围和验证触发条件；
+- 公式、单位、数值、工况、参数、异常和直接支撑结论的证据属于科研无损区；
+- 科研代码修改先判断无需新增、复用项目能力、标准库/平台能力和既有依赖，最后才写最小新实现。
+
+本协议吸收符号级检索、重复交付控制、可恢复压缩和最小实现等通用原则，但不安装 Headroom、jCodeMunch、Ponytail 或 CodeGraphContext，也不复制其运行时和自报性能数字。
+
 ## 可选科研代码上下文
 
 当科研任务需要理解本地多文件代码库的调用链、数据流、复现路径或改动影响时，总控可按需调用 `07-code-context`：
@@ -142,4 +154,4 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-ResearchSkill
 
 ## 版本状态
 
-`VERSION` 仍保持 `2.1.0`。统一工作流重构当前位于 Unreleased，尚未打 `v2.2.0` 标签。早期 WP5 A/B 未证明旧的多路线/Runtime 方案有质量或效率收益，因此只保留精简诊断记录，不作为发布依据。
+`VERSION` 当前为 `2.2.0`。统一工作流、可选代码上下文和共享上下文效率协议位于 Unreleased，尚未打 `v2.2.0` 标签。没有同任务、同输入、同验收标准的对照前，不报告固定 Token 节省比例。

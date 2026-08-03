@@ -28,6 +28,8 @@ description: Use to plan, draft, revise, or integrate SCI papers, short academic
 
 若核心证据未准备好，返回总控，不得用占位式虚构内容补齐。
 
+写作包跨越多个来源、章节或阶段时遵循 `../shared/CONTEXT_EFFICIENCY_PROTOCOL.md`：复用已锁定的论点—证据编号，不重新加载已验收原文；只补读当前章节的证据缺口。公式、单位、数值、工况、关键参数、异常和直接支撑结论的引文不得只凭摘要写入。
+
 ## 3. 执行身份与委派
 
 - 如果当前 Agent 是 `research_output`，只根据收到的锁定写作包起草并返回 `writing_draft`，不得新增科研事实或判断，也不得创建 Worker。
