@@ -23,6 +23,8 @@ description: Entry index for the coordinated research Skills suite. For any nont
 
 跨来源、跨文件、长日志、跨阶段或正式写作任务按需读取 `shared/CONTEXT_EFFICIENCY_PROTOCOL.md`；它是共享规则，不是新的顶层 Skill。
 
+跨 Skill、代码、脚本、Schema、配置、模板、说明和测试的修改按需读取 `shared/CHANGE_INTEGRITY_PROTOCOL.md`；它统一根因修复、唯一权威来源和科研可追溯边界。
+
 统一协同规则：
 
 1. Sol 始终负责理解、规划、方法、证据综合和关键科研判断。

@@ -35,10 +35,10 @@ description: Use to plan, draft, revise, or integrate SCI papers, short academic
 - 如果当前 Agent 是 `research_output`，只根据收到的锁定写作包起草并返回 `writing_draft`，不得新增科研事实或判断，也不得创建 Worker。
 - 如果当前 Agent 是 Sol，先检查并锁定目标、提纲、论点顺序、允许事实/数据/公式/引用、语言、长度、格式、禁止新增项、验收和停止条件。
 - 写作包完整且目标是正式章节、多个段落、表格、语言版本、格式化文本或可直接替换成稿时，必须创建专用 Worker；Sol 不得为节省一次调用而自己重写整段交付物。
-- 当前工具支持 `agent_type` 时调用 `spawn_agent(agent_type=research_output, fork_turns=none)`；不支持 `agent_type` 但支持显式模型参数时，调用 `spawn_agent(task_name=research_output, model=gpt-5.6-luna, reasoning_effort=low, fork_turns=none)`，并在锁定写作包中重申只读、无递归委派和禁止新增事实。
-- 两种 spawn 形态都不能锁定 Luna 时，若 `codex` 和经验证的 Luna 模型可用，则以 `--disable multi_agent`、`--ephemeral`、`--sandbox read-only`、`-m gpt-5.6-luna`、`model_reasoning_effort="low"` 启动一次性 `codex exec`，只传锁定写作包并要求 `writing_draft`。
+- 当前工具支持 `agent_type` 时，从 `runtime_dispatch.economy_agent_type` 与 `runtime_dispatch.fork_turns` 组装调用；不支持 `agent_type` 但支持显式模型参数时，再从 `tiers.economy.model` 和 `tiers.economy.reasoning_effort` 补齐参数，并在锁定写作包中重申只读、无递归委派和禁止新增事实。
+- 两种 spawn 形态都不能锁定 Luna 时，若 `codex` 和经验证的 economy 模型可用，则以 `--disable multi_agent`、`--ephemeral`、`--sandbox read-only` 及 canonical economy tier 的模型和 reasoning 启动一次性 `codex exec`，只传锁定写作包并要求 `writing_draft`。
 - 只有单句、短标签、标题候选或少量局部措辞调整可以由 Sol 直接完成。
-- 只有三种调用形态都不可用、目标模型不可用或一次合规调用明确失败时，才返回 `degraded_sol_only` 后由 Sol 完成当前有界写作，不得声称已经调用 Luna。
+- 只有三种调用形态都不可用、目标模型不可用或一次合规调用明确失败时，才返回 `runtime_dispatch.failure_status` 后由 Sol 完成当前有界写作，不得声称已经调用 Luna。
 
 ## 4. 先建立论点—证据图
 

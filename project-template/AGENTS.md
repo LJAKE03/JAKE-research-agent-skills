@@ -7,12 +7,12 @@
 1. 需要恢复、跨阶段追踪或高影响决策时读取 `PROJECT_STATE.md` 和 `PROJECT_OVERRIDES.md`；否则只读取当前任务所需输入。
 2. 不重复询问已确认信息；公开可查事实先自行核实。
 3. Sol 自动选择功能 Skill，只有真实依赖才形成阶段。
-4. 需要有界检索、查证、扫描、提取或证据表且路由状态为 `ready` 时，必须创建专用 Worker：工具支持 `agent_type` 就调用 `spawn_agent(agent_type=research_support, fork_turns=none)`；否则用兼容形态 `spawn_agent(task_name=research_support, model=gpt-5.6-terra, reasoning_effort=medium, fork_turns=none)`。
-5. 写作包完整且需要正式章节、多段成稿、表格、语言版本或格式化文本时，必须创建专用 Worker：工具支持 `agent_type` 就调用 `spawn_agent(agent_type=research_output, fork_turns=none)`；否则用兼容形态 `spawn_agent(task_name=research_output, model=gpt-5.6-luna, reasoning_effort=low, fork_turns=none)`。
+4. 需要有界检索、查证、扫描、提取或证据表且路由状态为 `ready` 时，必须创建专用 Worker；从 `.research-agent/MODEL_ROUTING.json` 的 `runtime_dispatch.support_agent_type`、`runtime_dispatch.fork_turns` 和 `tiers.support` 读取调用参数，不在项目规则中复制模型映射。
+5. 写作包完整且需要正式章节、多段成稿、表格、语言版本或格式化文本时，必须创建专用 Worker；从项目 canonical 快照的 `runtime_dispatch.economy_agent_type`、`runtime_dispatch.fork_turns` 和 `tiers.economy` 读取调用参数。
 6. 角色调用形态由 TOML 锁定模型和 reasoning；显式模型形态只能使用 canonical 路由值并在任务卡中重申只读边界。若 spawn 无法锁定目标模型，则用官方一次性 `codex exec --disable multi_agent --ephemeral --sandbox read-only` 适配并显式锁定模型/reasoning；不开发常驻 runtime。真实子线程、成功 spawn，或退出码为 0 且返回合规交接包的一次性调用才算运行证据。
 7. Worker 不互相转交或递归委派，按紧凑交接 Schema 返回 Sol。
 8. 模型间不传递完整对话、全部日志、全部项目历史或整篇原文。
-9. 三种调用形态都不可用、目标模型不可用或一次合规调用失败时标记 `degraded_sol_only`，由 Sol 继续有界任务并透明说明；不得假称已调用 Worker。
+9. 三种调用形态都不可用、目标模型不可用或一次合规调用失败时使用 canonical 快照的 `runtime_dispatch.failure_status`，由 Sol 继续有界任务并透明说明；不得假称已调用 Worker。
 10. 投稿、关键参数、核心方法、安全/高成本和最终科学结论由 Sol 紧凑验收。
 11. Skill 使用问题写入 `SKILL_FEEDBACK.md`；项目特有规则写入 `PROJECT_OVERRIDES.md`。
 12. 未经用户确认，不修改公共稳定 Skill；不得虚构文献、数据、实验、结果或完成状态。

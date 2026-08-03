@@ -22,9 +22,9 @@ description: Use whenever a research project needs current or niche information,
 
 - 如果当前 Agent 是 `research_support`，根据收到的紧凑证据任务卡执行本 Skill，完成后把证据包返回 Sol，不再创建 Worker。
 - 如果当前 Agent 是 Sol，先限定检索问题、输入定位、输出字段、验收和停止条件；路由状态为 `ready` 时必须创建专用 Worker，不得由 Sol 自己完成整段检索、扫描或证据表工作。
-- 当前工具支持 `agent_type` 时调用 `spawn_agent(agent_type=research_support, fork_turns=none)`；不支持 `agent_type` 但支持显式模型参数时，调用 `spawn_agent(task_name=research_support, model=gpt-5.6-terra, reasoning_effort=medium, fork_turns=none)`，并在任务卡中重申只读、无递归委派和证据交接边界。
-- 两种 spawn 形态都不能锁定 Terra 时，若 `codex` 和经验证的 Terra 模型可用，则以 `--disable multi_agent`、`--ephemeral`、`--sandbox read-only`、`-m gpt-5.6-terra`、`model_reasoning_effort="medium"` 启动一次性 `codex exec`，只传紧凑证据任务卡并要求 `evidence_pack`。
-- 只有三种调用形态都不可用、目标模型不可用或一次合规调用明确失败时，才返回 `degraded_sol_only`，再由 Sol 完成当前有界任务；不得声称已经调用 Terra。
+- 当前工具支持 `agent_type` 时，从 `runtime_dispatch.support_agent_type` 与 `runtime_dispatch.fork_turns` 组装调用；不支持 `agent_type` 但支持显式模型参数时，再从 `tiers.support.model` 和 `tiers.support.reasoning_effort` 补齐参数，并在任务卡中重申只读、无递归委派和证据交接边界。
+- 两种 spawn 形态都不能锁定 Terra 时，若 `codex` 和经验证的 support 模型可用，则以 `--disable multi_agent`、`--ephemeral`、`--sandbox read-only` 及 canonical support tier 的模型和 reasoning 启动一次性 `codex exec`，只传紧凑证据任务卡并要求 `evidence_pack`。
+- 只有三种调用形态都不可用、目标模型不可用或一次合规调用明确失败时，才返回 `runtime_dispatch.failure_status`，再由 Sol 完成当前有界任务；不得声称已经调用 Terra。
 
 ## 3. 必须联网的情况
 

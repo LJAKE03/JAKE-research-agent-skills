@@ -6,10 +6,12 @@
 - 单个项目的特殊规则不直接写入公共 Skill，应写入项目目录的 `PROJECT_OVERRIDES.md`。
 - 项目问题先写入项目目录的 `SKILL_FEEDBACK.md`。
 - 通用改进先形成 `skill-development/proposals/` 下的 proposal。
+- 跨文件变更遵循 `shared/CHANGE_INTEGRITY_PROTOCOL.md`，先确定 canonical、generated、consumer、historical 和 temporary 边界。
 
 ## 修改与发布
 
 - 修改前必须建立或更新回归测试；测试至少覆盖触发、路由、输出边界或安全行为中的相关项。
+- 优先修复根因并收敛到唯一权威来源；generated 文件通过生成链更新，兼容层必须有验证方式和退出条件。
 - 经用户确认后，才可合并为正式版本。
 - 小修改升级补丁版本（`2.0.x`）；新能力升级次版本（`2.x.0`）；架构变化升级主版本（`x.0.0`）。
 - 禁止因单一项目特例无限扩充公共 Skill；无法泛化的内容留在项目级文件。
