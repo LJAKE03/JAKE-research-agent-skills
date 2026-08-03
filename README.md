@@ -126,13 +126,34 @@ Worker 不递归委派，也不互相转交。Terra/Luna 不可用时进入 Sol-
 
 > 调用科研项目总控 Skill。请按统一科研流程处理【任务】。只询问真正阻断且必须由我决定的问题；是否检索、调用哪个功能 Skill、是否分阶段和是否需要严格验收由总控自动判断。
 
-项目模板可由：
+### 个人科研工作区（推荐）
+
+先初始化一个私人的科研工作区，再由脚本自动分配 `project-编号-项目名`：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\New-ResearchProject.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Initialize-ResearchWorkspace.ps1 -WorkspaceRoot 'D:\ResearchWorkspace'
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\New-ResearchProject.ps1 -ProjectName '氨燃料供给系统' -WorkspaceRoot 'D:\ResearchWorkspace'
 ```
 
-创建。项目特殊规则写入 `PROJECT_OVERRIDES.md`，不要修改公共 Skill。
+工作区包含：
+
+- `RESEARCH_WORKBENCH.md`：经确认的稳定工作偏好；
+- `GLOBAL_LESSONS.md`：经确认、可跨项目复用的去敏经验；
+- `PROJECT_SOP.md`：项目创建、执行和收尾规范；
+- `PROJECT_INDEX.json`：项目编号和状态索引；
+- 每个项目自己的 `08_质量门与复盘/PROJECT_RETROSPECTIVE.md`。
+
+项目经验默认只留在项目内。项目收尾时可以自动生成晋升包，但只有用户明确批准后，才能写入个人全局记忆；公共 Skill 修改还需要回归测试。
+
+### 普通项目目录（兼容）
+
+原有方式保持可用：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\New-ResearchProject.ps1 -ProjectName '项目名' -Destination 'D:\ResearchProjects'
+```
+
+项目特殊规则写入 `PROJECT_OVERRIDES.md`，不要修改公共 Skill。
 启动器的 `scripts/research-launcher-settings.json` 是本机运行状态，首次启动时自动创建且不进入 Git；仓库只提供不含真实路径的 `.example.json`。
 
 
@@ -154,4 +175,4 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-ResearchSkill
 
 ## 版本状态
 
-`VERSION` 当前为 `2.2.0`。统一工作流、可选代码上下文和共享上下文效率协议位于 Unreleased，尚未打 `v2.2.0` 标签。没有同任务、同输入、同验收标准的对照前，不报告固定 Token 节省比例。
+`VERSION` 当前为 `2.3.0`。统一工作流、科研工作区、两级经验复盘、可选代码上下文和共享上下文效率协议位于 Unreleased，尚未打 `v2.3.0` 标签。没有同任务、同输入、同验收标准的对照前，不报告固定 Token 节省比例。
