@@ -15,5 +15,20 @@
     "uncertainties": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
     "changed_files": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
     "next_action": {"type": "string", "minLength": 1}
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "handoff_type": {"enum": ["evidence_pack", "writing_draft", "verification_result"]}
+        },
+        "required": ["handoff_type"]
+      },
+      "then": {
+        "properties": {
+          "changed_files": {"maxItems": 0}
+        }
+      }
+    }
+  ]
 }

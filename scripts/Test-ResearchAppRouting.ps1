@@ -27,14 +27,11 @@ $expected = @{
   economy   = @{ model=''; effort='' }
 }
 $projectConfig = Join-Path $SourceRoot '.codex\config.toml'
+$configText = ''
 if (Test-Path -LiteralPath $projectConfig) {
   $configText = Get-Content -Raw -Encoding UTF8 -LiteralPath $projectConfig
-  Test-Text $configText '(?m)^model\s*=\s*"gpt-5\.6-sol"\s*$' 'root strategic model pinned'
-  Test-Text $configText '(?m)^model_reasoning_effort\s*=\s*"xhigh"\s*$' 'root strategic reasoning pinned'
   Test-Text $configText '(?ms)^\[features\].*?^multi_agent\s*=\s*true\s*$' 'multi-agent explicitly enabled'
   Test-Text $configText '(?m)^\[agents\]\s*$' 'agent config section'
-  Test-Text $configText '(?m)^max_threads\s*=\s*2\s*$' 'agent concurrency cap'
-  Test-Text $configText '(?m)^max_depth\s*=\s*1\s*$' 'agent nesting cap'
   Test-Text $configText '(?ms)^\[agents\.research_support\].*?^config_file\s*=\s*"agents/research-support\.toml"\s*$' 'support role registered'
   Test-Text $configText '(?ms)^\[agents\.research_output\].*?^config_file\s*=\s*"agents/research-output\.toml"\s*$' 'output role registered'
 } else { Add-Result FAIL 'project agent config' 'missing' }
@@ -73,6 +70,13 @@ if (Test-Path -LiteralPath $routingJsonPath) {
   }
   catch { Add-Result FAIL 'routing JSON parse' $_.Exception.Message }
 } else { Add-Result FAIL 'routing JSON' 'missing' }
+
+if(-not [string]::IsNullOrWhiteSpace($configText) -and $null -ne $routing) {
+  Test-Text $configText (('(?m)^model\s*=\s*"{0}"\s*$' -f [regex]::Escape($expected.strategic.model))) 'root strategic model matches canonical'
+  Test-Text $configText (('(?m)^model_reasoning_effort\s*=\s*"{0}"\s*$' -f [regex]::Escape($expected.strategic.effort))) 'root strategic reasoning matches canonical'
+  Test-Text $configText (('(?m)^max_threads\s*=\s*{0}\s*$' -f [int]$routing.delegation.max_threads)) 'agent concurrency matches canonical'
+  Test-Text $configText (('(?m)^max_depth\s*=\s*{0}\s*$' -f [int]$routing.delegation.max_depth)) 'agent nesting matches canonical'
+}
 
 $routingSchemaPath = Join-Path $SourceRoot 'shared\MODEL_ROUTING.schema.json'
 $schemaValidatorPath = Join-Path $SourceRoot 'scripts\Validate-ResearchRoutingSchema.py'
@@ -115,6 +119,21 @@ foreach($contract in @(
   }
 }
 
+$invalidReadOnlyHandoffPath = Join-Path $SourceRoot 'evals\fixtures\handoff-readonly-invalid.json'
+if($null -eq $contractPython -or -not(Test-Path -LiteralPath $schemaValidatorPath -PathType Leaf)) {
+  Add-Result $unverifiedStatus 'read-only handoff rejection' 'python/jsonschema validator unavailable'
+} elseif(-not(Test-Path -LiteralPath $invalidReadOnlyHandoffPath -PathType Leaf)) {
+  Add-Result FAIL 'read-only handoff rejection' 'negative fixture missing'
+} else {
+  $previousErrorActionPreference=$ErrorActionPreference
+  $ErrorActionPreference='Continue'
+  $invalidOutput=@(& $contractPython.Source $schemaValidatorPath $handoffSchemaPath $invalidReadOnlyHandoffPath 2>&1)
+  $invalidExit=$LASTEXITCODE
+  $ErrorActionPreference=$previousErrorActionPreference
+  $invalidDetail=if($invalidExit -eq 1){'non-empty changed_files rejected'}else{'unexpected exit=' + $invalidExit + '; ' + ($invalidOutput -join '; ')}
+  Add-Result $(if($invalidExit -eq 1){'PASS'}else{'FAIL'}) 'read-only handoff rejection' $invalidDetail
+}
+
 $handoffTemplate=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot 'shared\STAGE_HANDOFF.template.md')
 foreach($field in @('objective','input_locators','locked_decisions','output_contract','acceptance_checks','stop_conditions','handoff_type','summary','deliverable','evidence_locations','uncertainties','changed_files','next_action')) {
   Test-Text $handoffTemplate ([regex]::Escape($field)) "handoff template $field"
@@ -124,10 +143,10 @@ $routingMarkdownPath = Join-Path $SourceRoot 'shared\MODEL_ROUTING.md'
 if (Test-Path -LiteralPath $routingMarkdownPath) {
   $routingMarkdown = Get-Content -Raw -Encoding UTF8 -LiteralPath $routingMarkdownPath
   foreach($tier in @('strategic','support','economy')) {
-    if (-not [string]::IsNullOrWhiteSpace($expected[$tier].model)) { Test-Text $routingMarkdown ([regex]::Escape($expected[$tier].model)) "routing Markdown $tier model" }
+    Test-Text $routingMarkdown ([regex]::Escape('tiers.' + $tier + '.*')) ('routing Markdown ' + $tier + ' canonical key')
   }
-  Test-Text $routingMarkdown '`max_threads=2`.*`max_depth=1`' 'routing Markdown agent limits'
-  Test-Text $routingMarkdown 'Terra/`medium`/\u53EA\u8BFB.*Luna/`low`/\u53EA\u8BFB' 'routing Markdown read-only agents'
+  Test-Text $routingMarkdown 'delegation' 'routing Markdown canonical agent limits'
+  Test-NoText $routingMarkdown 'gpt-5\.6-(sol|terra|luna)' 'routing Markdown has no duplicated model mapping'
   Test-NoText $routingMarkdown '\u4EC5 Sol|\u5C1A\u672A\u521B\u5EFA agents|no Terra or Luna' 'routing Markdown stale state'
 } else { Add-Result FAIL 'routing Markdown' 'missing' }
 
@@ -135,17 +154,19 @@ $cliTemplatePath = Join-Path $SourceRoot 'config\research.config.toml.template'
 if (Test-Path -LiteralPath $cliTemplatePath) {
   $cliTemplate = Get-Content -Raw -Encoding UTF8 -LiteralPath $cliTemplatePath
   Test-Text $cliTemplate 'Sol, Terra, and Luna were verified' 'CLI template verified catalog'
+  Test-Text $cliTemplate (('(?m)^model\s*=\s*"{0}"\s*$' -f [regex]::Escape($expected.strategic.model))) 'CLI template strategic model matches canonical'
+  Test-Text $cliTemplate (('(?m)^model_reasoning_effort\s*=\s*"{0}"\s*$' -f [regex]::Escape($expected.strategic.effort))) 'CLI template strategic reasoning matches canonical'
   Test-NoText $cliTemplate 'contains gpt-5\.6-sol only|no Terra or Luna' 'CLI template stale state'
 } else { Add-Result FAIL 'CLI compatibility template' 'missing' }
 
 $templateConfigPath = Join-Path $SourceRoot 'project-template\.codex\config.toml'
 if (Test-Path -LiteralPath $templateConfigPath) {
   $templateConfig = Get-Content -Raw -Encoding UTF8 -LiteralPath $templateConfigPath
-  Test-Text $templateConfig '(?m)^model\s*=\s*"gpt-5\.6-sol"\s*$' 'template strategic model pinned'
-  Test-Text $templateConfig '(?m)^model_reasoning_effort\s*=\s*"xhigh"\s*$' 'template strategic reasoning pinned'
+  Test-Text $templateConfig (('(?m)^model\s*=\s*"{0}"\s*$' -f [regex]::Escape($expected.strategic.model))) 'template strategic model matches canonical'
+  Test-Text $templateConfig (('(?m)^model_reasoning_effort\s*=\s*"{0}"\s*$' -f [regex]::Escape($expected.strategic.effort))) 'template strategic reasoning matches canonical'
   Test-Text $templateConfig '(?ms)^\[features\].*?^multi_agent\s*=\s*true\s*$' 'template multi-agent enabled'
-  Test-Text $templateConfig '(?m)^max_threads\s*=\s*2\s*$' 'template concurrency cap'
-  Test-Text $templateConfig '(?m)^max_depth\s*=\s*1\s*$' 'template nesting cap'
+  Test-Text $templateConfig (('(?m)^max_threads\s*=\s*{0}\s*$' -f [int]$routing.delegation.max_threads)) 'template concurrency matches canonical'
+  Test-Text $templateConfig (('(?m)^max_depth\s*=\s*{0}\s*$' -f [int]$routing.delegation.max_depth)) 'template nesting matches canonical'
   Test-Text $templateConfig '(?m)^\[agents\.research_support\]\s*$' 'template support role registration'
   Test-Text $templateConfig '(?m)^\[agents\.research_output\]\s*$' 'template output role registration'
 } else { Add-Result FAIL 'template agent config' 'missing' }
@@ -261,14 +282,13 @@ Test-Text $orchestrator '`rg`/`rg --files`' 'native search boundary'
 Test-Text $orchestrator '`git diff`' 'Git inspection boundary'
 Test-Text $orchestrator 'Large results must be written to files\.' 'output control'
 Test-Text $orchestrator 'STAGE_HANDOFF\.schema\.json' 'compact handoff schema reference'
-Test-Text $orchestrator 'agent_type=research_support.*fork_turns=none' 'orchestrator preferred Terra dispatch'
-Test-Text $orchestrator 'agent_type=research_output.*fork_turns=none' 'orchestrator preferred Luna dispatch'
-Test-Text $orchestrator 'task_name=research_support, model=gpt-5\.6-terra, reasoning_effort=medium, fork_turns=none' 'orchestrator compatible Terra dispatch'
-Test-Text $orchestrator 'task_name=research_output, model=gpt-5\.6-luna, reasoning_effort=low, fork_turns=none' 'orchestrator compatible Luna dispatch'
-Test-Text $orchestrator 'codex --disable multi_agent exec.*--ephemeral.*--sandbox read-only -m gpt-5\.6-terra.*reasoning_effort="medium"' 'orchestrator isolated Terra dispatch'
-Test-Text $orchestrator 'Luna 使用相同命令但模型为 .*gpt-5\.6-luna.*reasoning 为 .*low' 'orchestrator isolated Luna dispatch'
+Test-Text $orchestrator 'runtime_dispatch\.support_agent_type' 'orchestrator canonical support dispatch'
+Test-Text $orchestrator 'runtime_dispatch\.economy_agent_type' 'orchestrator canonical economy dispatch'
+Test-Text $orchestrator 'tiers\.support' 'orchestrator canonical support tier'
+Test-Text $orchestrator 'tiers\.economy' 'orchestrator canonical economy tier'
+Test-Text $orchestrator '`--disable multi_agent`.*`--ephemeral`.*`--sandbox read-only`' 'orchestrator isolated dispatch boundary'
 Test-Text $orchestrator '真实创建的子线程、成功的 spawn 工具结果.*一次性 .*codex exec' 'orchestrator runtime evidence rule'
-Test-Text $orchestrator 'degraded_sol_only' 'orchestrator transparent dispatch fallback'
+Test-Text $orchestrator 'runtime_dispatch\.failure_status' 'orchestrator canonical dispatch fallback'
 Test-Text $orchestrator '07-code-context/SKILL\.md' 'orchestrator code-context route'
 $codeContext = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '07-code-context\SKILL.md')
 foreach($token in @('codegraph_explore','rg --files','Code Context Capsule','freshness','verification_targets','STAGE_HANDOFF.schema.json','changed_files=[]')) {
@@ -294,6 +314,18 @@ Test-Text $reconnaissance 'CONTEXT_EFFICIENCY_PROTOCOL\.md' 'reconnaissance cont
 Test-Text $codeContext 'CONTEXT_EFFICIENCY_PROTOCOL\.md' 'code context efficiency reference'
 Test-Text $handoffTemplate 'CONTEXT_EFFICIENCY_PROTOCOL\.md' 'handoff context efficiency reference'
 
+$changeIntegrityPath = Join-Path $SourceRoot 'shared\CHANGE_INTEGRITY_PROTOCOL.md'
+if(Test-Path -LiteralPath $changeIntegrityPath -PathType Leaf) {
+  $changeIntegrity = Get-Content -Raw -Encoding UTF8 -LiteralPath $changeIntegrityPath
+  foreach($token in @('根因','唯一权威来源','活动文件','科研可追溯','原始数据','失败记录','版本历史','回归测试','兼容层','退出条件')) {
+    Test-Text $changeIntegrity ([regex]::Escape($token)) ('change integrity ' + $token)
+  }
+} else { Add-Result FAIL 'change integrity protocol' 'missing' }
+foreach($relative in @('00-research-orchestrator\SKILL.md','SKILL.md','AGENTS.md','SKILL_DEVELOPMENT.md','shared\QUALITY_RUBRIC.md')) {
+  $consumer=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot $relative)
+  Test-Text $consumer 'CHANGE_INTEGRITY_PROTOCOL\.md' ($relative + ' change integrity reference')
+}
+
 $academicWriting = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '05-academic-writing\SKILL.md')
 Test-Text $academicWriting '不得写成由用户显式选择模型、Agent 或模式' 'Luna routing wording acceptance'
 Test-Text $academicWriting 'CONTEXT_EFFICIENCY_PROTOCOL\.md' 'academic writing context efficiency reference'
@@ -311,12 +343,9 @@ Test-Text $stagePlanning '完整对话、全部项目状态、全部工具日志
 $suiteIndex=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot 'SKILL.md')
 $routingExamples=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot 'shared\ROUTING_EXAMPLES.md')
 $evals=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot 'evals\evals.json')|ConvertFrom-Json
-Test-Value ([string]$evals.runtime_assertions.support_agent_type) 'research_support' 'eval support agent type'
-Test-Value ([string]$evals.runtime_assertions.economy_agent_type) 'research_output' 'eval output agent type'
-Test-Value ([string]$evals.runtime_assertions.fork_turns) 'none' 'eval specialized fork mode'
-Test-Value ([string]$evals.runtime_assertions.preferred_call_shape) 'agent_type' 'eval preferred spawn call shape'
-Test-Value ([string]$evals.runtime_assertions.compatible_call_shape) 'explicit_model' 'eval compatible spawn call shape'
-Test-Value ([string]$evals.runtime_assertions.isolated_call_shape) 'codex_exec' 'eval isolated call shape'
+Test-Value ([string]$evals.runtime_assertions.canonical_contract) '../shared/MODEL_ROUTING.json' 'eval canonical routing contract'
+Test-Value ([bool]$evals.runtime_assertions.worker_required_when_expected_workers_nonempty) $true 'eval requires workers when routed'
+Test-Value ([bool]$evals.runtime_assertions.require_canonical_dispatch) $true 'eval requires canonical dispatch values'
 Test-Value ([bool]$evals.runtime_assertions.require_runtime_evidence) $true 'eval requires runtime evidence'
 Test-Value ([bool]$evals.runtime_assertions.require_spawn_evidence) $true 'eval requires spawn evidence'
 Test-Value ([bool]$evals.runtime_assertions.self_report_is_evidence) $false 'eval rejects self-report evidence'
@@ -354,14 +383,26 @@ if($null -eq $gitCommand -or -not(Test-Path -LiteralPath (Join-Path $SourceRoot 
 Test-Text $launcherText '一条统一科研流程' 'launcher unified workflow'
 Test-Text $launcherText '(?s)Sol.*Terra.*Luna' 'launcher automatic model responsibilities'
 Test-Text $launcherText 'Worker 不互相转交' 'launcher single-hop boundary'
-Test-Text $launcherText 'agent_type=research_support, fork_turns=none' 'launcher preferred Terra spawn instruction'
-Test-Text $launcherText 'agent_type=research_output, fork_turns=none' 'launcher preferred Luna spawn instruction'
-Test-Text $launcherText 'task_name=research_support, model=gpt-5\.6-terra, reasoning_effort=medium, fork_turns=none' 'launcher compatible Terra spawn instruction'
-Test-Text $launcherText 'task_name=research_output, model=gpt-5\.6-luna, reasoning_effort=low, fork_turns=none' 'launcher compatible Luna spawn instruction'
+Test-Text $launcherText '\$routing\.runtime_dispatch' 'launcher loads canonical dispatch'
+Test-Text $launcherText '\$routing\.tiers\.support' 'launcher loads canonical support tier'
+Test-Text $launcherText '\$routing\.tiers\.economy' 'launcher loads canonical economy tier'
+Test-Text $launcherText '\$dispatch\.support_agent_type' 'launcher derives support agent type'
+Test-Text $launcherText '\$dispatch\.economy_agent_type' 'launcher derives economy agent type'
 Test-Text $launcherText 'codex --disable multi_agent exec --strict-config --ephemeral --ignore-user-config --json --color never --sandbox read-only' 'launcher isolated Codex instruction'
 Test-Text $launcherText '用 -m 和 model_reasoning_effort 锁定 Terra/Luna' 'launcher isolated model lock'
 Test-Text $launcherText '真实子线程、成功 spawn.*退出码为 0' 'launcher runtime evidence rule'
 Test-NoText $launcherText '\bFast\b|\bStandard\b|\bStrict\b(?!-)|\bExploratory\b|\bDirect\b|\bFocused\b|Open Research|CAPABILITY_MANIFEST|RUNTIME_POLICY' 'launcher has no public modes or runtime framework'
+$routingLiteralConsumers=@(
+  '00-research-orchestrator\SKILL.md',
+  '02-research-reconnaissance\SKILL.md',
+  '05-academic-writing\SKILL.md',
+  'project-template\AGENTS.md',
+  'scripts\Start-ResearchAgent.ps1'
+)
+foreach($relative in $routingLiteralConsumers) {
+  $consumer=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot $relative)
+  Test-NoText $consumer 'gpt-5\.6-(sol|terra|luna)' ($relative + ' has no duplicated model mapping')
+}
 
 $results | Format-Table -AutoSize
 $failures=@($results|Where-Object Status -eq 'FAIL').Count

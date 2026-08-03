@@ -4,6 +4,7 @@
 
 # Sol, Terra, and Luna were verified locally with codex debug models.
 # This optional CLI compatibility profile deliberately keeps its main thread on
+# Generated consumer: values are synchronized from shared/MODEL_ROUTING.json; do not edit independently.
 # Sol; project-level app agents route support and economy work to Terra and Luna.
 model = "gpt-5.6-sol"
 

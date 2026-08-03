@@ -81,6 +81,10 @@ flowchart LR
 
 本协议吸收符号级检索、重复交付控制、可恢复压缩和最小实现等通用原则，但不安装 Headroom、jCodeMunch、Ponytail 或 CodeGraphContext，也不复制其运行时和自报性能数字。
 
+### 变更完整性协议
+
+修改 Skill、代码、脚本、Schema、配置、模板、说明或测试并影响多个活动文件时，加载 `shared/CHANGE_INTEGRITY_PROTOCOL.md`。它要求先定位根因和唯一权威来源，让 generated 与 consumer 通过生成或解析式测试保持一致；同时保留原始数据、失败记录、决策依据、复盘和版本历史。该协议是共享变更契约，不是新的 Agent 或工作流层。
+
 ## 可选科研代码上下文
 
 当科研任务需要理解本地多文件代码库的调用链、数据流、复现路径或改动影响时，总控可按需调用 `07-code-context`：
@@ -113,7 +117,7 @@ CodeGraph 只可能降低代码探索 Token，不能替代文献、PDF、实验�
 
 Windows Codex 应用通过以下文件自动路由：
 
-- `.codex/config.toml`：固定 Sol/`xhigh`、启用 multi-agent、注册 Terra/Luna 角色，并限制 `max_threads=2`、`max_depth=1`；
+- `.codex/config.toml`：从 canonical strategic tier 固定主线程、启用 multi-agent、注册两个专用角色，并应用 canonical 并发边界；
 - `.codex/agents/research-support.toml`：Terra 只读证据 Worker；
 - `.codex/agents/research-output.toml`：Luna 只读写作 Worker；
 - `shared/MODEL_ROUTING.json`：唯一 canonical 模型映射。
@@ -145,9 +149,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\New-ResearchProjec
 
 项目经验默认只留在项目内。项目收尾时可以自动生成晋升包，但只有用户明确批准后，才能写入个人全局记忆；公共 Skill 修改还需要回归测试。
 
-### 普通项目目录（兼容）
+### 同一路由的目录级入口（兼容）
 
-原有方式保持可用：
+不使用个人工作区时仍可直接指定目标目录。该入口生成相同的项目路由快照、Agent 配置和项目模板，属于同一 canonical 流程的替代初始化方式，不是第二套工作流；当前没有单独弃用时间表。
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\New-ResearchProject.ps1 -ProjectName '项目名' -Destination 'D:\ResearchProjects'
@@ -156,6 +160,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\New-ResearchProjec
 项目特殊规则写入 `PROJECT_OVERRIDES.md`，不要修改公共 Skill。
 启动器的 `scripts/research-launcher-settings.json` 是本机运行状态，首次启动时自动创建且不进入 Git；仓库只提供不含真实路径的 `.example.json`。
 
+## 历史更新目录
+
+每次实质性优化在 [update-history](update-history/README.md) 中建立独立记录，说明背景与根因、具体改动、兼容与数据保护、验证证据以及 Git/PR 追溯。`CHANGELOG.md` 保留版本级摘要，历史目录提供逐次优化明细。
 
 ## 验证
 

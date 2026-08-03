@@ -1,0 +1,12 @@
+{
+  "schema_version": 2,
+  "status": "complete",
+  "handoff_type": "evidence_pack",
+  "summary": ["A read-only worker incorrectly reported a changed file."],
+  "deliverable": "Bounded evidence result.",
+  "evidence_locations": ["paper-a.pdf#page=12"],
+  "uncertainties": [],
+  "changed_files": ["results.md"],
+  "next_action": "Sol rejects this handoff as incompatible with the read-only contract."
+}
+

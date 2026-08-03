@@ -57,6 +57,12 @@ foreach($relative in @('.codex\config.toml','project-template\.codex\config.toml
   Write-TextIfChanged $path $updated $relative
 }
 
+$cliProfilePath=Join-Path $SourceRoot 'config\research.config.toml.template'
+$cliProfileText=[IO.File]::ReadAllText($cliProfilePath)
+$cliProfileUpdated=Update-RequiredLine $cliProfileText '(?m)^model[ \t]*=[ \t]*"[^"]+"[ \t]*(?=\r?$)' ('model = "'+[string]$routing.tiers.strategic.model+'"') 'CLI profile strategic model'
+$cliProfileUpdated=Update-RequiredLine $cliProfileUpdated '(?m)^model_reasoning_effort[ \t]*=[ \t]*"[^"]+"[ \t]*(?=\r?$)' ('model_reasoning_effort = "'+[string]$routing.tiers.strategic.reasoning_effort+'"') 'CLI profile strategic reasoning'
+Write-TextIfChanged $cliProfilePath $cliProfileUpdated 'config/research.config.toml.template'
+
 $pending=[ordered]@{
   status='pending'
   configuration_version=[string]$routing.configuration_version

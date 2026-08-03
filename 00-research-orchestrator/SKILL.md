@@ -10,6 +10,8 @@ description: Mandatory entry and return point for any nontrivial research projec
 
 当任务涉及多来源、多文件、长日志、跨阶段交接或正式科研写作时，再读取 `../shared/CONTEXT_EFFICIENCY_PROTOCOL.md`；简单问答和已知单点读取不额外加载。
 
+当任务修改 Skill、代码、脚本、Schema、配置、模板、说明或测试，且影响多个活动文件或共享契约时，读取 `../shared/CHANGE_INTEGRITY_PROTOCOL.md`。它要求活动状态原生一致，同时保留科研证据和版本历史。
+
 ## 1. 核心目标
 
 维持一条连续科研流程，并根据当前工作的性质自动调用功能 Skill 和模型层：
@@ -74,10 +76,10 @@ Terra 和 Luna 可以指出缺口、冲突和不确定性，但不得替 Sol 做
 职责表不是建议清单。当前任务命中以下条件且路由状态为 `ready` 时，Sol 必须实际调用子 Agent：
 
 - 调用前检查当前 `spawn_agent` 工具实际暴露的参数，不得假设所有 Codex 运行面使用同一调用形态；
-- 若支持 `agent_type`，证据任务调用 `spawn_agent(agent_type=research_support, fork_turns=none)`，写作任务调用 `spawn_agent(agent_type=research_output, fork_turns=none)`；角色 TOML 锁定模型和 reasoning，此形态不再传模型覆盖；
-- 若不支持 `agent_type`，但支持 `task_name`、`model`、`reasoning_effort` 和 `fork_turns`，证据任务调用 `spawn_agent(task_name=research_support, model=gpt-5.6-terra, reasoning_effort=medium, fork_turns=none)`，写作任务调用 `spawn_agent(task_name=research_output, model=gpt-5.6-luna, reasoning_effort=low, fork_turns=none)`；模型值只能来自已验证的 `MODEL_ROUTING.json`，不得自行替换；
+- 若支持 `agent_type`，证据任务从 `runtime_dispatch.support_agent_type` 读取角色，写作任务从 `runtime_dispatch.economy_agent_type` 读取角色，两者都使用 `runtime_dispatch.fork_turns`；角色 TOML 锁定模型和 reasoning，此形态不再传模型覆盖；
+- 若不支持 `agent_type`，但支持 `task_name`、`model`、`reasoning_effort` 和 `fork_turns`，从 `runtime_dispatch.*_agent_type`、`tiers.support`、`tiers.economy` 和 `runtime_dispatch.fork_turns` 组装显式调用；所有值只来自已验证的 `MODEL_ROUTING.json`，不得在 Skill 中手写第二份映射；
 - 显式模型兼容形态没有角色 TOML 的强制只读保障时，任务卡必须写明不编辑文件、`changed_files` 为空、不得委派、不得越过科研判断边界；Sol 对返回结果做同样验收；
-- 若 spawn 工具不能锁定目标模型，但本机 `codex` 可用且模型目录验证通过，允许使用官方一次性适配：Terra 调用 `codex --disable multi_agent exec --strict-config --ephemeral --ignore-user-config --json --color never --sandbox read-only -m gpt-5.6-terra -c model_reasoning_effort="medium"`；Luna 使用相同命令但模型为 `gpt-5.6-luna`、reasoning 为 `low`。只通过标准输入传递紧凑任务卡，进程完成即退出；这不是常驻 Agent runtime；
+- 若 spawn 工具不能锁定目标模型，但本机 `codex` 可用且模型目录验证通过，允许使用官方一次性适配：命令固定使用 `--disable multi_agent`、`--strict-config`、`--ephemeral`、`--ignore-user-config`、`--json`、`--color never` 和 `--sandbox read-only`；`-m` 与 `model_reasoning_effort` 分别从目标 tier 的 canonical 字段读取。只通过标准输入传递紧凑任务卡，进程完成即退出；这不是常驻 Agent runtime；
 - 三种形态都只发送紧凑任务卡。spawn 形态等待子线程，`codex exec` 形态要求退出码为 0 且返回约定交接包；随后由 Sol 判断、验收并向用户答复。
 
 只有下列情况允许 Sol 不创建 Worker：
@@ -85,9 +87,9 @@ Terra 和 Luna 可以指出缺口、冲突和不确定性，但不得替 Sol 做
 - 任务属于第 2 节不可委派的科研判断；
 - 请求简单、低风险、无需检索或文件扫描，并且不是正式多段写作交付；
 - 路由预检明确返回 `degraded_sol_only`；
-- 当前运行面不支持两种 spawn 形态且官方一次性 `codex exec` 也不可用、目标模型不可用，或一次合规调用明确失败。
+- 当前运行面不支持两种 spawn 形态且官方一次性 `codex exec` 也不可用、目标模型不可用，或一次合规调用明确失败；状态使用 `runtime_dispatch.failure_status`。
 
-真实创建的子线程、成功的 spawn 工具结果，或已锁定目标模型/reasoning 且退出码为 0、返回合规交接包的一次性 `codex exec` 才是运行证据。模型在正文中声称“已调用 Terra/Luna”不算证据。调用不可用或失败时，不得伪造 Worker 结果或反复重试；将当前任务标记为 `degraded_sol_only`，由 Sol 完成有界任务，并在最终答复中用一句话透明说明本轮发生了降级。用户仍不需要选择模型。
+真实创建的子线程、成功的 spawn 工具结果，或已锁定目标模型/reasoning 且退出码为 0、返回合规交接包的一次性 `codex exec` 才是运行证据。模型在正文中声称“已调用 Terra/Luna”不算证据。调用不可用或失败时，不得伪造 Worker 结果或反复重试；使用 `runtime_dispatch.failure_status` 标记当前任务，由 Sol 完成有界任务，并在最终答复中用一句话透明说明本轮发生了降级。用户仍不需要选择模型。
 
 ## 6. 何时形成阶段
 

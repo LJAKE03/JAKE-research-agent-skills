@@ -34,7 +34,7 @@
 - `deliverable`：证据表、提取结果、草稿或验证结果；
 - `evidence_locations`：来源或文件定位；
 - `uncertainties`：缺口、冲突和待 Sol 决定事项；
-- `changed_files`：只读 Worker 必须为空；
+- `changed_files`：`evidence_pack`、`writing_draft` 和 `verification_result` 属于只读交接，必须为空；Schema 会拒绝非空值；
 - `next_action`：返回 Sol 后的唯一建议动作。
 
 需要记录重复交付或省略风险时，在现有 `deliverable` 文本内部附加共享协议定义的 Context Receipt；不得给 JSON handoff 增加 Schema 未允许的顶层字段。

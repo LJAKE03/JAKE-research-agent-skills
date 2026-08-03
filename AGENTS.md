@@ -26,6 +26,8 @@
 13. 项目完成前生成有证据、适用边界和去敏检查的经验晋升包。
 14. 只有用户明确批准的跨项目经验才能进入个人全局记忆；未经确认不得自动修改公共稳定 Skill。
 
+修改 Skill、代码、脚本、Schema、配置、模板、说明或测试且影响多个活动文件时，读取 `shared/CHANGE_INTEGRITY_PROTOCOL.md`。活动文件应收敛为一套原生一致设计，但原始数据、失败记录、决策依据、复盘和版本历史必须保持可追溯。
+
 Windows PowerShell 读取仓库文本时显式使用 `Get-Content -Encoding UTF8`；不要用默认编码或 `gc`/`cat`/`type` 猜测解码。优先用 `rg`、限定行或摘要读取大型文件；文本修改使用 `apply_patch`。需要由 Windows PowerShell 5.1 执行且含非 ASCII 的 `.ps1` 必须保留 UTF-8 BOM。
 
-应用版 Codex 的模型路由以 `.codex/config.toml`、`.codex/agents/*.toml` 和 `shared/MODEL_ROUTING.json` 为准。主代理使用 Sol；`research_support` 使用 Terra；`research_output` 使用 Luna。
+应用版 Codex 的模型路由以 `shared/MODEL_ROUTING.json` 为唯一权威来源；`.codex/config.toml`、`.codex/agents/*.toml` 和其他运行配置均为由该契约生成或校验的消费者。主代理使用 Sol；`research_support` 使用 Terra；`research_output` 使用 Luna。

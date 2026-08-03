@@ -98,7 +98,11 @@ foreach ($relativePath in @(
     'shared\STAGE_HANDOFF.template.md',
     'shared\STAGE_HANDOFF.schema.json',
     'shared\STAGE_HANDOFF.example.json',
+    'evals\fixtures\handoff-readonly-invalid.json',
     'shared\CONTEXT_EFFICIENCY_PROTOCOL.md',
+    'shared\CHANGE_INTEGRITY_PROTOCOL.md',
+    'update-history\README.md',
+    'update-history\2026-08-03-native-consistency-and-traceability.md',
     'shared\QUALITY_RUBRIC.md',
     'shared\ROUTING_EXAMPLES.md',
     'shared\MODEL_ROUTING.schema.json'
