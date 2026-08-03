@@ -71,6 +71,8 @@ try {
     '.research-agent\MODEL_ROUTING.md',
     '.research-agent\routing-version.json'
   )) { Assert-Test (Test-Path -LiteralPath (Join-Path $newProject $relative) -PathType Leaf) "new project contains $relative" }
+  $projectRetrospectives = @(Get-ChildItem -LiteralPath $newProject -Recurse -Filter 'PROJECT_RETROSPECTIVE.md' -File)
+  Assert-Test ($projectRetrospectives.Count -eq 1) 'new project contains one retrospective template'
 
   $config = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $newProject '.codex\config.toml')
   Assert-Test ($config -match ("(?m)^max_threads\s*=\s*{0}\s*$" -f $expectedMaxThreads)) "new project max_threads=$expectedMaxThreads"

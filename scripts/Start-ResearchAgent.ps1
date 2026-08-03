@@ -43,7 +43,7 @@ try {
   $script:RoutingInitializer = Join-Path $script:ScriptsRoot 'Initialize-ResearchProjectRouting.ps1'
   $script:TemplateRoot = Join-Path $script:RepositoryRoot 'project-template'
   $script:SettingsPath = Join-Path $script:ScriptsRoot 'research-launcher-settings.json'
-  $script:RequiredFiles = @('AGENTS.md','PROJECT_STATE.md','PROJECT_OVERRIDES.md','SKILL_FEEDBACK.md','RESEARCH_PROJECT_START_PROMPT.md')
+  $script:RequiredFiles = @('AGENTS.md','PROJECT_STATE.md','PROJECT_OVERRIDES.md','SKILL_FEEDBACK.md','RESEARCH_PROJECT_START_PROMPT.md','08_质量门与复盘\PROJECT_RETROSPECTIVE.md')
   $script:IdentityFiles = @('AGENTS.md','PROJECT_STATE.md')
   $script:GuiAvailable = $false
 }
@@ -280,11 +280,14 @@ function Initialize-MissingFiles {
   $message='将仅新增以下缺失模板文件，不会覆盖已有文件：'+[Environment]::NewLine+[Environment]::NewLine+(($missing|ForEach-Object{'- '+$_})-join [Environment]::NewLine)+[Environment]::NewLine+[Environment]::NewLine+'是否继续安全初始化？'
   if(-not $AssumeYes -and -not(Confirm-Action $message '安全初始化项目')){return $false}
   $name=Split-Path -Leaf $Project
+  $projectId=if($name -match '^(project-\d{4})-'){$Matches[1]}else{$name}
   foreach($file in $missing){
     $target=Join-Path $Project $file
     if(Test-Path -LiteralPath $target){continue}
+    $parent=Split-Path -Parent $target
+    if(-not(Test-Path -LiteralPath $parent -PathType Container)){New-Item -ItemType Directory -Path $parent -Force|Out-Null}
     $text=Get-Content -LiteralPath (Join-Path $script:TemplateRoot $file) -Encoding UTF8 -Raw
-    $text=$text.Replace('【项目名称】',$name).Replace('研究项目名称',$name)
+    $text=$text.Replace('【项目名称】',$name).Replace('【项目 ID】',$projectId).Replace('研究项目名称',$name)
     try{Write-NewTextFile $target $text}catch [IO.IOException]{if(-not(Test-Path -LiteralPath $target)){throw}}
   }
   return (@(Get-MissingFiles $Project).Count -eq 0)
@@ -304,11 +307,24 @@ function Invoke-NewProject {
   $name=Validate-ProjectName $Name
   $dest=Resolve-Directory $Destination
   if(-not $dest){throw "项目保存目录不存在：$Destination"}
-  $target=[IO.Path]::GetFullPath((Join-Path $dest $name))
-  if(-not([IO.Path]::GetFullPath((Split-Path -Parent $target)).Equals([IO.Path]::GetFullPath($dest),[StringComparison]::OrdinalIgnoreCase))){throw '项目目标路径无效。'}
-  if(Test-Path -LiteralPath $target){throw "目标项目已存在，为避免覆盖而停止：$target"}
+  $isWorkspace=(Test-Path -LiteralPath (Join-Path $dest 'PROJECT_INDEX.json') -PathType Leaf) -and (Test-Path -LiteralPath (Join-Path $dest 'projects') -PathType Container)
   $scriptPath=Join-Path $script:ScriptsRoot 'New-ResearchProject.ps1'
-  $output=@(& $scriptPath -ProjectName $name -Destination $dest)
+  if($isWorkspace){
+    $output=@(& $scriptPath -ProjectName $name -WorkspaceRoot $dest)
+    $index=Get-Content -LiteralPath (Join-Path $dest 'PROJECT_INDEX.json') -Encoding UTF8 -Raw|ConvertFrom-Json
+    $entry=@($index.projects)|Select-Object -Last 1
+    if($null -eq $entry -or [string]$entry.name -ne $name){throw '科研工作区索引未记录刚创建的项目。'}
+    $relative=[string]$entry.folder
+    if([IO.Path]::IsPathRooted($relative) -or $relative -match '(^|[\\/])\.\.([\\/]|$)'){throw '科研工作区索引包含不安全的项目路径。'}
+    $target=[IO.Path]::GetFullPath((Join-Path $dest $relative))
+    $workspaceBoundary=[IO.Path]::GetFullPath($dest).TrimEnd('\')+'\'
+    if(-not $target.StartsWith($workspaceBoundary,[StringComparison]::OrdinalIgnoreCase)){throw '科研工作区项目路径越界。'}
+  }else{
+    $target=[IO.Path]::GetFullPath((Join-Path $dest $name))
+    if(-not([IO.Path]::GetFullPath((Split-Path -Parent $target)).Equals([IO.Path]::GetFullPath($dest),[StringComparison]::OrdinalIgnoreCase))){throw '项目目标路径无效。'}
+    if(Test-Path -LiteralPath $target){throw "目标项目已存在，为避免覆盖而停止：$target"}
+    $output=@(& $scriptPath -ProjectName $name -Destination $dest)
+  }
   if(-not $Quiet){$output|ForEach-Object{Write-Host $_}}
   $missing=@(Get-MissingFiles $target)
   if($missing.Count){throw "项目创建后缺少文件：$($missing -join ', ')"}

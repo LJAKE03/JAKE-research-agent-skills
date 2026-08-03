@@ -88,6 +88,11 @@ catch {
 
 foreach ($relativePath in @(
     'scripts\research-launcher-settings.example.json',
+    'workspace-template\RESEARCH_WORKBENCH.md',
+    'workspace-template\GLOBAL_LESSONS.md',
+    'workspace-template\PROJECT_SOP.md',
+    'workspace-template\PROJECT_INDEX.json',
+    'project-template\08_质量门与复盘\PROJECT_RETROSPECTIVE.md',
     '07-code-context\evals\evals.json',
     'shared\PROJECT_STATE.template.md',
     'shared\STAGE_HANDOFF.template.md',
@@ -196,6 +201,15 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 Add-Result PASS 'managed project routing integration' 'passed'
+$workspaceTest = Join-Path $PSScriptRoot 'Test-ResearchWorkspace.ps1'
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $workspaceTest -SourceRoot $SourceRoot
+if ($LASTEXITCODE -ne 0) {
+    Add-Result FAIL 'research workspace integration' "exit=$LASTEXITCODE"
+    Write-Report
+    Write-Output "FINAL FAIL research-workspace-exit=$LASTEXITCODE"
+    exit $LASTEXITCODE
+}
+Add-Result PASS 'research workspace integration' 'passed'
 
 $fileOperationsTest = Join-Path $PSScriptRoot 'Test-ResearchFileOperations.ps1'
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $fileOperationsTest -SourceRoot $SourceRoot
