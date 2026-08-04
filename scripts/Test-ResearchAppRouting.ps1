@@ -329,6 +329,9 @@ foreach($relative in @('00-research-orchestrator\SKILL.md','SKILL.md','AGENTS.md
 $academicWriting = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '05-academic-writing\SKILL.md')
 Test-Text $academicWriting '不得写成由用户显式选择模型、Agent 或模式' 'Luna routing wording acceptance'
 Test-Text $academicWriting 'CONTEXT_EFFICIENCY_PROTOCOL\.md' 'academic writing context efficiency reference'
+Test-Text $academicWriting 'PUBLICATION_CLAIM_TRACEABILITY\.template\.md' 'academic writing publication traceability reference'
+Test-Text $academicWriting '投稿级论断追溯合同' 'academic writing contribution gate'
+Test-Text $academicWriting '合同未确认时.*不把实质性投稿写作交给 Luna' 'academic writing blocks unlocked publication drafting'
 foreach($field in @('objective','input_locators','locked_decisions','output_contract','acceptance_checks','stop_conditions')) { Test-Text $orchestrator ([regex]::Escape($field)) "orchestrator task-card $field" }
 Test-NoText $orchestrator '\bFast\b|\bStandard\b|\bStrict\b(?!-)|\bExploratory\b|\bDirect\b|\bFocused\b|Open Research|CAPABILITY_MANIFEST|RUNTIME_POLICY|Write-ResearchRuntimeEvent' 'no public lanes or runtime framework'
 $qualityGate=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '06-quality-gate\SKILL.md')
@@ -336,6 +339,18 @@ foreach($gate in @('L0','L1','L2')) { Test-Text $qualityGate ([regex]::Escape($g
 Test-Text $qualityGate 'Sol 只做一次紧凑语义验收' 'compact Sol acceptance'
 Test-Text $qualityGate '不新增独立 Reviewer Agent' 'quality gate no extra reviewer'
 Test-Text $qualityGate 'CONTEXT_EFFICIENCY_PROTOCOL\.md' 'quality gate context efficiency reference'
+Test-Text $qualityGate '投稿级论断追溯预检' 'quality gate publication preflight'
+Test-Text $qualityGate '每个主要 Results 单元至少映射一项贡献' 'quality gate results contribution mapping'
+Test-Text $qualityGate 'CRITICAL 或 MAJOR.*宣布可投稿前已解决' 'quality gate unresolved reviewer risk'
+Test-Text $qualityGate '不为填表重复启动审稿' 'quality gate reuses existing review findings'
+$publicationTraceability = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot 'shared\PUBLICATION_CLAIM_TRACEABILITY.template.md')
+foreach($token in @('核心命题','贡献声明表','结果—贡献验证表','审稿与编辑风险登记','禁止解释','CRITICAL / MAJOR / MINOR','变更与恢复')) {
+  Test-Text $publicationTraceability ([regex]::Escape($token)) ('publication traceability ' + $token)
+}
+foreach($relative in @('shared\PROJECT_STATE.template.md','project-template\PROJECT_STATE.md')) {
+  $projectState = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot $relative)
+  Test-Text $projectState 'PUBLICATION_CLAIM_TRACEABILITY\.md' ($relative + ' publication traceability locator')
+}
 $stagePlanning=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '03-stage-planning-execution\SKILL.md')
 Test-Text $stagePlanning '真实依赖' 'dependency-driven planning'
 Test-Text $stagePlanning '不设置默认阶段数' 'no fixed stage count'
@@ -349,6 +364,7 @@ Test-Value ([bool]$evals.runtime_assertions.require_canonical_dispatch) $true 'e
 Test-Value ([bool]$evals.runtime_assertions.require_runtime_evidence) $true 'eval requires runtime evidence'
 Test-Value ([bool]$evals.runtime_assertions.require_spawn_evidence) $true 'eval requires spawn evidence'
 Test-Value ([bool]$evals.runtime_assertions.self_report_is_evidence) $false 'eval rejects self-report evidence'
+Test-Value (@($evals.evals).Count) 22 'unified workflow eval count'
 Test-Text $suiteIndex '一条统一科研流程' 'suite index unified workflow'
 Test-Text $routingExamples '同一流程' 'routing examples unified workflow'
 Test-NoText ($suiteIndex + $routingExamples) '\bFast\b|\bStandard\b|\bStrict\b(?!-)|\bExploratory\b|\bDirect\b|\bFocused\b|Open Research' 'index and examples have no public modes'

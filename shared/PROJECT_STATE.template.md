@@ -8,6 +8,7 @@
 - 工作流：统一科研流程（总控自动选择 Skill、委派与质量强度）
 - 项目状态：进行中
 - 项目复盘：`08_质量门与复盘/PROJECT_RETROSPECTIVE.md`
+- 投稿论断追溯合同（仅投稿级）：`08_质量门与复盘/PUBLICATION_CLAIM_TRACEABILITY.md`
 
 
 ## 2. 总体目标

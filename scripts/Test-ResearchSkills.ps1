@@ -101,8 +101,10 @@ foreach ($relativePath in @(
     'evals\fixtures\handoff-readonly-invalid.json',
     'shared\CONTEXT_EFFICIENCY_PROTOCOL.md',
     'shared\CHANGE_INTEGRITY_PROTOCOL.md',
+    'shared\PUBLICATION_CLAIM_TRACEABILITY.template.md',
     'update-history\README.md',
     'update-history\2026-08-03-native-consistency-and-traceability.md',
+    'update-history\2026-08-04-publication-claim-traceability.md',
     'shared\QUALITY_RUBRIC.md',
     'shared\ROUTING_EXAMPLES.md',
     'shared\MODEL_ROUTING.schema.json'
