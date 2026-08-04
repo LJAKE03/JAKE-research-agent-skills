@@ -35,6 +35,6 @@
 ## Git / PR 追溯
 
 - 分支：`agent/publication-claim-traceability`
-- 提交：待创建
-- Pull Request：待创建
+- 提交：[c4d3655](https://github.com/LJAKE03/JAKE-research-agent-skills/commit/c4d3655cc391013e14a6ad7e7a873c5a34f091ba)
+- Pull Request：[草稿 PR #14](https://github.com/LJAKE03/JAKE-research-agent-skills/pull/14)
 - 上游历史：PR #13 已合并；本分支已安全快进到最新 `master`，新 PR 直接以 `master` 为基线。
