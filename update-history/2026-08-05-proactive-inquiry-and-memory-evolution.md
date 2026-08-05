@@ -39,6 +39,6 @@
 
 ## Git / PR 追溯
 
-- 分支：待发布时填写。
-- 提交：待发布时填写。
-- 草稿 PR：待创建。
+- 分支：`agent/v2.4-proactive-research-memory`
+- 主要功能提交：`86d8738`
+- 草稿 PR：[PR #15](https://github.com/LJAKE03/JAKE-research-agent-skills/pull/15)
