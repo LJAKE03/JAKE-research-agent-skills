@@ -13,6 +13,7 @@
 
 | 日期 | 主题 | 状态 | 记录 |
 |---|---|---|---|
+| 2026-08-05 | 主动关键信息与科研记忆演化 | 待合并 | [查看详情](2026-08-05-proactive-inquiry-and-memory-evolution.md) |
 | 2026-08-03 | 原生一致性与科研可追溯优化 | [草稿 PR #12](https://github.com/LJAKE03/JAKE-research-agent-skills/pull/12) | [查看详情](2026-08-03-native-consistency-and-traceability.md) |
 
 更早的版本级记录见 [CHANGELOG.md](../CHANGELOG.md)，设计决策见 [DESIGN_NOTES.md](../DESIGN_NOTES.md)。

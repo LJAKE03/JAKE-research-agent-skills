@@ -101,8 +101,10 @@ foreach ($relativePath in @(
     'evals\fixtures\handoff-readonly-invalid.json',
     'shared\CONTEXT_EFFICIENCY_PROTOCOL.md',
     'shared\CHANGE_INTEGRITY_PROTOCOL.md',
+    'shared\PROACTIVE_INQUIRY_AND_MEMORY_PROTOCOL.md',
     'update-history\README.md',
     'update-history\2026-08-03-native-consistency-and-traceability.md',
+    'update-history\2026-08-05-proactive-inquiry-and-memory-evolution.md',
     'shared\QUALITY_RUBRIC.md',
     'shared\ROUTING_EXAMPLES.md',
     'shared\MODEL_ROUTING.schema.json'
@@ -115,6 +117,27 @@ foreach ($name in $names) {
     $file = Join-Path $UserSkillsRoot "$name\SKILL.md"
     $visible = Test-Path -LiteralPath $file -PathType Leaf
     Add-Result $(if ($visible) { 'PASS' } else { 'FAIL' }) "installed $name" $(if ($visible) { 'visible' } else { 'not installed' })
+}
+
+$memoryContracts = @(
+    @('shared\PROACTIVE_INQUIRY_AND_MEMORY_PROTOCOL.md','awaiting_user'),
+    @('shared\PROACTIVE_INQUIRY_AND_MEMORY_PROTOCOL.md','未回复不得写入全局记忆'),
+    @('00-research-orchestrator\SKILL.md','PROACTIVE_INQUIRY_AND_MEMORY_PROTOCOL.md'),
+    @('01-requirement-elicitation\SKILL.md','为什么现在需要回答'),
+    @('project-template\AGENTS.md','PROACTIVE_INQUIRY_AND_MEMORY_PROTOCOL.md'),
+    @('project-template\AGENTS.md','当前明确指令'),
+    @('project-template\RESEARCH_PROJECT_START_PROMPT.md','PROACTIVE_INQUIRY_AND_MEMORY_PROTOCOL.md'),
+    @('workspace-template\PROJECT_SOP.md','PROACTIVE_INQUIRY_AND_MEMORY_PROTOCOL.md'),
+    @('workspace-template\PROJECT_SOP.md','当前明确指令'),
+    @('project-template\08_质量门与复盘\PROJECT_RETROSPECTIVE.md','记忆检查点状态'),
+    @('workspace-template\RESEARCH_WORKBENCH.md','查看、修改、废弃或删除'),
+    @('workspace-template\GLOBAL_LESSONS.md','去重与冲突')
+)
+foreach ($contract in $memoryContracts) {
+    $path = Join-Path $SourceRoot $contract[0]
+    $text = if (Test-Path -LiteralPath $path) { Get-Content -Encoding UTF8 -Raw -LiteralPath $path } else { '' }
+    $ok = $text.Contains($contract[1])
+    Add-Result $(if ($ok) { 'PASS' } else { 'FAIL' }) "memory contract $($contract[0])" $contract[1]
 }
 
 $scripts = @(Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.ps1')
