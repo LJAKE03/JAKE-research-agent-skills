@@ -34,11 +34,12 @@
 ## 验证证据
 
 - 红灯：协议未实现时，确定性测试准确报告共享协议、消费端标记和工作区记忆检查点缺失。
-- 绿灯：源仓库完整 `Test-ResearchSkills.ps1` 返回 `FINAL PASS`；24 项行为评测契约、PowerShell 5.1 UTF-8、路由、受管项目、工作区以及文件操作集成全部通过。AI-agent 合并副本需以 28 项评测再次验证。
+- 绿灯：源仓库 24 项与 PR #14 合并后的 28 项完整 `Test-ResearchSkills.ps1` 均返回 `FINAL PASS`；PowerShell 5.1 UTF-8、路由、受管项目、工作区以及文件操作集成全部通过。
 - L1 只读审计发现项目模板与工作区 SOP 的 canonical 协议引用缺口；补齐引用和“当前明确指令优先”断言后再次全量通过。
 
 ## Git / PR 追溯
 
-- 分支：待发布时填写。
-- 提交：待发布时填写。
-- 草稿 PR：待创建。
+- 分支：`agent/v2.4-proactive-research-memory`
+- 主要功能提交：`86d8738`
+- 已验证合并基线：`e96638f`
+- PR：[PR #15](https://github.com/LJAKE03/JAKE-research-agent-skills/pull/15)
