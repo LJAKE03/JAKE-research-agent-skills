@@ -5,7 +5,7 @@
 ## 执行规则
 
 1. 需要恢复、跨阶段追踪或高影响决策时读取 `PROJECT_STATE.md` 和 `PROJECT_OVERRIDES.md`；否则只读取当前任务所需输入。
-2. 不重复询问已确认信息；公开可查事实先自行核实。
+2. 不重复询问已确认信息；按 `PROACTIVE_INQUIRY_AND_MEMORY_PROTOCOL.md`（由总控从已安装的 `shared` 目录加载）先检查项目材料、再核实权威公开事实，只询问会改变结果且用户独有的信息，并说明影响。
 3. Sol 自动选择功能 Skill，只有真实依赖才形成阶段。
 4. 需要有界检索、查证、扫描、提取或证据表且路由状态为 `ready` 时，必须创建专用 Worker；从 `.research-agent/MODEL_ROUTING.json` 的 `runtime_dispatch.support_agent_type`、`runtime_dispatch.fork_turns` 和 `tiers.support` 读取调用参数，不在项目规则中复制模型映射。
 5. 写作包完整且需要正式章节、多段成稿、表格、语言版本或格式化文本时，必须创建专用 Worker；从项目 canonical 快照的 `runtime_dispatch.economy_agent_type`、`runtime_dispatch.fork_turns` 和 `tiers.economy` 读取调用参数。
@@ -21,10 +21,12 @@
 ## 项目经验与全局晋升
 
 1. 若项目位于已初始化科研工作区的 `projects/project-编号-项目名` 下，读取 `../../RESEARCH_WORKBENCH.md` 和 `../../PROJECT_SOP.md`；只按当前阶段、Skill 和标签检索 `../../GLOBAL_LESSONS.md` 的相关条目，不全文加载全部历史。
-2. 项目踩坑、失败尝试、有效方法、利好和工作习惯候选先写入 `08_质量门与复盘/PROJECT_RETROSPECTIVE.md`，并保留证据定位与适用边界。
-3. 仅在阶段边界、重大异常或项目收尾时总结经验，不为每个小动作追加流水账；单个项目中推断出的工作习惯必须标记为“待确认”。
-4. 项目完成前执行关闭检查并形成去敏晋升包。只有用户明确批准的通用经验，才能写入个人工作台或全局经验；未经批准不得自动修改个人全局记忆。
-5. Skill 缺陷继续写入 `SKILL_FEEDBACK.md`；修改公共稳定 Skill 还必须经过用户确认和回归测试。
+2. 当前明确指令优先于项目约束和长期记忆；仅当冲突会实质改变结果时，提出一个聚焦确认，不静默覆盖历史规则。
+3. 项目踩坑、失败尝试、有效方法、利好和工作习惯候选先写入 `08_质量门与复盘/PROJECT_RETROSPECTIVE.md`，并保留证据定位与适用边界。
+4. 仅在阶段边界、重大异常或项目收尾时总结经验；A/B 级重要习惯与工作流详细记录，C 级低影响经验只保留关键步骤，D 级项目特例不晋升。
+5. 用户反复纠正同类问题时，主动合并复现证据并提出更精确的稳定规则候选；重复次数不能替代授权。
+6. 项目收尾先生成带编号的候选摘要，再询问批准全部、指定子集、拒绝或延后。未回复不得写入个人全局记忆，同一候选集没有实质变化时不得重复询问。
+7. Skill 缺陷继续写入 `SKILL_FEEDBACK.md`；修改公共稳定 Skill 还必须经过用户确认和回归测试。
 
 
 <!-- research-agent-routing:start -->

@@ -364,7 +364,7 @@ Test-Value ([bool]$evals.runtime_assertions.require_canonical_dispatch) $true 'e
 Test-Value ([bool]$evals.runtime_assertions.require_runtime_evidence) $true 'eval requires runtime evidence'
 Test-Value ([bool]$evals.runtime_assertions.require_spawn_evidence) $true 'eval requires spawn evidence'
 Test-Value ([bool]$evals.runtime_assertions.self_report_is_evidence) $false 'eval rejects self-report evidence'
-Test-Value (@($evals.evals).Count) 22 'unified workflow eval count'
+Test-Value (@($evals.evals).Count) 28 'unified workflow eval count'
 Test-Text $suiteIndex '一条统一科研流程' 'suite index unified workflow'
 Test-Text $routingExamples '同一流程' 'routing examples unified workflow'
 Test-NoText ($suiteIndex + $routingExamples) '\bFast\b|\bStandard\b|\bStrict\b(?!-)|\bExploratory\b|\bDirect\b|\bFocused\b|Open Research' 'index and examples have no public modes'

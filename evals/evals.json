@@ -206,6 +206,60 @@
       "requires_stage_plan": false,
       "risk_level": "low",
       "expected_behavior": ["使用已锁定事实生成内部报告", "不强制创建投稿论断追溯合同", "不新增事实或结论", "完成最小格式与一致性检查"]
+    },
+    {
+      "id": 23,
+      "prompt": "请帮我规划这个方向，但我没有整理该领域通常使用的评价指标、标准范围和主流方法。",
+      "expected_workers": ["terra"],
+      "expected_review": "terra_provenance",
+      "requires_stage_plan": false,
+      "risk_level": "medium",
+      "expected_behavior": ["先检索权威来源和可发现的公开事实", "不把公开可查信息转问用户", "检索后只询问会改变路线且用户独有的信息", "问题说明影响并保持紧凑"]
+    },
+    {
+      "id": 24,
+      "prompt": "这项仿真可以按追求最高精度或按两天内交付来设计，我还没有说明哪个目标优先。",
+      "expected_workers": [],
+      "expected_review": "sol_semantic",
+      "requires_stage_plan": false,
+      "risk_level": "high",
+      "expected_behavior": ["识别为高影响且用户独有的价值判断", "只提出一个聚焦问题", "说明为什么现在需要回答", "给出选项、推荐默认值和路线影响"]
+    },
+    {
+      "id": 25,
+      "prompt": "项目交付物和最终质量门都完成了，请正式收尾。",
+      "expected_workers": [],
+      "expected_review": "sol_semantic",
+      "requires_stage_plan": false,
+      "risk_level": "medium",
+      "expected_behavior": ["先从项目证据主动形成分级候选摘要", "重要习惯详细、次要经验简要", "询问批准全部、部分、拒绝或延后", "用户未回复前不写入全局记忆"]
+    },
+    {
+      "id": 26,
+      "prompt": "你总结了五条经验；我只批准第2条工作偏好和第4条通用踩坑，其他不要记。",
+      "expected_workers": [],
+      "expected_review": "deterministic",
+      "requires_stage_plan": false,
+      "risk_level": "medium",
+      "expected_behavior": ["只应用用户批准的子集", "工作偏好写入RESEARCH_WORKBENCH", "通用踩坑写入GLOBAL_LESSONS", "其余条目保留项目状态或标记拒绝而不晋升"]
+    },
+    {
+      "id": 27,
+      "prompt": "我已经在三个项目里反复纠正你：先查权威资料，再问只有我能决定的关键信息。以后别让我重复说。",
+      "expected_workers": [],
+      "expected_review": "sol_semantic",
+      "requires_stage_plan": false,
+      "risk_level": "high",
+      "expected_behavior": ["识别重复纠正和高影响协作原则", "提出更精确的稳定规则候选并说明适用边界", "请求用户确认后才晋升", "不以出现次数替代用户授权"]
+    },
+    {
+      "id": 28,
+      "prompt": "长期记忆里写着优先快速草拟，但我这次明确要求先做完整证据审查。",
+      "expected_workers": ["terra"],
+      "expected_review": "sol_semantic",
+      "requires_stage_plan": false,
+      "risk_level": "high",
+      "expected_behavior": ["当前明确指令优先于长期记忆", "按本次要求先做证据审查", "仅在冲突会实质改变结果时提出一个聚焦确认", "不静默覆写或删除旧记忆"]
     }
   ]
 }
