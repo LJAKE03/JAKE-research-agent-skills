@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   End-to-end tests for the personal research workspace and project experience loop.
 #>
@@ -70,6 +70,12 @@ try {
   Assert-Test ($retrospectives.Count -eq 1) 'new project contains one retrospective'
   $retrospective = Get-Content -LiteralPath $retrospectives[0].FullName -Raw -Encoding UTF8
   Assert-Test ($retrospective.Contains('project-0001') -and $retrospective.Contains('alpha')) 'retrospective placeholders are populated'
+  Assert-Test ($retrospective.Contains('记忆检查点状态') -and $retrospective.Contains('候选集摘要')) 'retrospective contains proactive memory checkpoint'
+  $projectState = Get-Content -LiteralPath (Join-Path $alpha 'PROJECT_STATE.md') -Raw -Encoding UTF8
+  Assert-Test ($projectState.Contains('记忆检查点') -and $projectState.Contains('awaiting_user')) 'project state tracks memory checkpoint lifecycle'
+  $globalLessons = Get-Content -LiteralPath (Join-Path $workspace 'GLOBAL_LESSONS.md') -Raw -Encoding UTF8
+  $researchWorkbench = Get-Content -LiteralPath $workbench -Raw -Encoding UTF8
+  Assert-Test ($globalLessons.Contains('查看、修改、废弃或删除') -and $researchWorkbench.Contains('查看、修改、废弃或删除')) 'global memory stores expose user controls'
   Assert-Test (-not (Test-Path -LiteralPath (Join-Path $alpha 'GLOBAL_LESSONS.md'))) 'personal global memory is not copied into project'
   $quotedCreator = $creator.Replace("'","''")
   $quotedWorkspace = $workspace.Replace("'","''")

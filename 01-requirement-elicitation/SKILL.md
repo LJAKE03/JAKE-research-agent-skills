@@ -8,6 +8,8 @@ description: Use when a research task, project, paper, review, report, experimen
 <!-- routing-preflight:required -->
 执行前确认总控已加载 `../shared/MODEL_ROUTING.json`；如未加载，先返回 `../00-research-orchestrator/SKILL.md`，不得直接执行。本 Skill 只引用共享规则，不复制其全文。
 
+提问门槛、问题格式、记忆冲突优先级统一引用 `../shared/PROACTIVE_INQUIRY_AND_MEMORY_PROTOCOL.md`；本 Skill 不维护第二套规则。
+
 ## 1. 目标
 
 通过少量、高价值问题消除会显著影响研究质量的歧义。不要把需求访谈变成问卷轰炸。
@@ -20,6 +22,8 @@ description: Use when a research task, project, paper, review, report, experimen
 2. 用户已上传文件；
 3. 已有项目状态；
 4. 可通过互联网、数据库、标准或论文直接查明的信息。
+
+公开事实优先调用 `../02-research-reconnaissance/SKILL.md` 形成紧凑证据包；检索完成后仍存在高影响、用户独有的未知项才询问用户。
 
 只询问以下内容：
 
@@ -43,6 +47,7 @@ description: Use when a research task, project, paper, review, report, experimen
 - 首轮只提出 0–2 个真正阻断执行的问题；其余问题在相关高影响检查点按需提出。
 - 将问题按“目标—对象—数据—方法—交付”排序。
 - 尽量给出选项、推荐默认值和影响说明。
+- 每个问题说明“为什么现在需要回答”、已经查明什么，以及不同答案会改变什么；适合时给出推荐默认值。
 - 不重复询问已经回答的问题。
 - 用户只回答部分问题时，基于已有信息继续，并列出假设。
 - 不为了形式而提问。
