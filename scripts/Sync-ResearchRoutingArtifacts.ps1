@@ -31,6 +31,17 @@ function Update-RequiredLine {
 $templateSnapshot=Join-Path $SourceRoot 'project-template\.research-agent\MODEL_ROUTING.json'
 Write-TextIfChanged $templateSnapshot $canonicalText 'project routing snapshot'
 
+$defaultSelection=[ordered]@{
+  schema_version=1
+  tiers=[ordered]@{
+    strategic=[ordered]@{model=[string]$routing.tiers.strategic.model;reasoning_effort=[string]$routing.tiers.strategic.reasoning_effort}
+    support=[ordered]@{model=[string]$routing.tiers.support.model;reasoning_effort=[string]$routing.tiers.support.reasoning_effort}
+    economy=[ordered]@{model=[string]$routing.tiers.economy.model;reasoning_effort=[string]$routing.tiers.economy.reasoning_effort}
+  }
+}
+$defaultSelectionText=($defaultSelection|ConvertTo-Json -Depth 5)+"`n"
+Write-TextIfChanged (Join-Path $SourceRoot 'project-template\.research-agent\MODEL_ROUTING.selection.json') $defaultSelectionText 'project model selection defaults'
+
 foreach($agent in @(
   @{File='research-support.toml';Tier='support'},
   @{File='research-output.toml';Tier='economy'}
@@ -67,9 +78,15 @@ $pending=[ordered]@{
   status='pending'
   configuration_version=[string]$routing.configuration_version
   model_mapping_version=[string]$routing.model_mapping_version
-  template_version='research-routing-v5'
+  template_version='research-routing-v6'
   canonical_sha256=$null
   snapshot_sha256=$null
+  selection_sha256=$null
+  resolved_tiers=[ordered]@{
+    strategic=[ordered]@{model=[string]$routing.tiers.strategic.model;reasoning_effort=[string]$routing.tiers.strategic.reasoning_effort}
+    support=[ordered]@{model=[string]$routing.tiers.support.model;reasoning_effort=[string]$routing.tiers.support.reasoning_effort}
+    economy=[ordered]@{model=[string]$routing.tiers.economy.model;reasoning_effort=[string]$routing.tiers.economy.reasoning_effort}
+  }
   schema_version=[int]$routing.schema_version
   conflict_count=0
   catalog=[ordered]@{

@@ -1,26 +1,24 @@
 # 科研工作流 Skills 集成包
 
-本仓库提供一条统一科研流程，由总控自动选择功能 Skills 和 Sol/Terra/Luna 责任。它不是独立 AI-Agent Runtime，也不要求用户选择模型、Agent 或工作模式。
+本仓库提供一条统一科研流程。用户可在启动新任务前选择总控与两个 Worker 的模型；总控仍按任务自动选择功能 Skills、委派和检查强度。
 
 ## 核心流程
 
 ```mermaid
 flowchart LR
-    U["用户科研任务"] --> S1["Sol：理解、规划、方法与拆解"]
-    S1 -->|需要证据| T["Terra：检索、查证、扫描、提取、证据表"]
-    T --> S2["Sol：证据综合并锁定论点/方法/提纲"]
-    S1 -->|证据已充分| S2
-    S2 -->|需要文本| L["Luna：按锁定写作包生成文本与格式"]
-    L --> A["Sol：必要时做紧凑语义验收"]
-    S2 -->|非写作交付| A
-    A --> U
+    U["用户科研任务"] --> C["战略总控：理解、规划、方法与综合"]
+    C -->|独立证据任务且委派有收益| E["research_support：检索、扫描、提取"]
+    E --> C
+    C -->|内容已锁定且委派有收益| O["research_output：组织文本与格式"]
+    O --> C
+    C --> U
 ```
 
-| 模型 | 自动责任 | 明确边界 |
-|---|---|---|
-| GPT-5.6 Sol | 需求、总体规划、任务拆解、方法、证据综合、关键判断、最终答复 | 不把最终科研责任委派出去 |
-| GPT-5.6 Terra | 文献检索、网页查证、文件扫描、信息提取、证据表和来源完整性 | 不决定研究方向、方法、参数、来源可靠性或最终结论 |
-| GPT-5.6 Luna | 根据锁定提纲、论点、证据编号和格式要求生成文本、语言和格式 | 不新增事实、引用、公式、因果关系或科研判断 |
+| 角色 | 默认模型 | 可选模型 | 责任 |
+|---|---|---|---|
+| 战略总控 | GPT-5.6 Sol / `xhigh` | GPT-6 Astra、GPT-5.6 Sol | 规划、方法、证据综合、关键判断和最终答复 |
+| `research_support` | GPT-5.6 Terra / `medium` | Sol、Terra、Luna | 有界检索、扫描、提取和证据表 |
+| `research_output` | GPT-5.6 Luna / `low` | Sol、Terra、Luna | 根据锁定输出包组织文本、表格、语言和格式 |
 
 ## 功能 Skills
 
@@ -37,7 +35,7 @@ flowchart LR
 
 模型之间不复制完整对话、全部项目历史、全部工具日志或整篇论文原文。
 
-### Sol → Terra
+### 战略总控 → research_support
 
 - 当前唯一目标；
 - 输入文件、页面、URL 或数据表定位；
@@ -45,24 +43,24 @@ flowchart LR
 - 证据表字段和来源要求；
 - 验收与停止条件。
 
-### Terra → Sol
+### research_support → 战略总控
 
 - 证据表或提取结果；
 - 来源定位和元数据；
 - 可观察事实摘要；
 - 冲突、缺口和不确定项。
 
-### Sol → Luna
+### 战略总控 → research_output
 
-- 目标章节或交付物；
-- 锁定提纲和论点顺序；
+- 一个主要交付物；
+- 锁定内容、字段、顺序、提纲、论点和模板；
 - 允许使用的事实、数据、公式和引用编号；
-- 风格、语言、长度和格式；
-- 禁止新增项与占位符规则。
+- 风格、语言、长度、版式和格式；
+- 禁止新增项、确定性验收条件与占位符规则。
 
-### Luna → Sol
+### research_output → 战略总控
 
-- 完整草稿或格式结果；
+- 完整草稿、结构化内容或格式规格；
 - 占位符和不确定项；
 - 使用的证据定位；
 - 建议 Sol 检查的下一动作。
@@ -87,7 +85,7 @@ flowchart LR
 
 ### 主动提问与科研记忆演化
 
-`shared/PROACTIVE_INQUIRY_AND_MEMORY_PROTOCOL.md` 统一两件事：任务中先检查材料和权威公开信息，再只询问用户独有的高影响决定；项目收尾时由 Sol 主动形成分级候选摘要，再询问用户批准全部、指定子集、拒绝或延后。A/B 级重要原则与工作流详细保留，C/D 级经验压缩为关键步骤或仅留项目内。重复出现不会自动晋升，用户未回复也不会写入个人全局记忆。
+`shared/PROACTIVE_INQUIRY_AND_MEMORY_PROTOCOL.md` 统一两件事：任务中先检查材料和权威公开信息，再只询问用户独有的高影响决定；项目收尾时由战略总控主动形成分级候选摘要，再询问用户批准全部、指定子集、拒绝或延后。A/B 级重要原则与工作流详细保留，C/D 级经验压缩为关键步骤或仅留项目内。重复出现不会自动晋升，用户未回复也不会写入个人全局记忆。
 
 ## 可选科研代码上下文
 
@@ -105,13 +103,13 @@ CodeGraph 只可能降低代码探索 Token，不能替代文献、PDF、实验�
 
 ## 质量检查
 
-检查强度由总控内部自动选择：
+检查强度由总控按风险选择：
 
 - L0：语法、Schema、哈希、文件、单位和确定性测试；
-- L1：Terra 核对来源定位、字段完整性、证据覆盖、遗漏和冲突；
-- L2：Sol 裁决来源可靠性、方法、参数、解释和科学结论。
+- L1：证据 Worker 核对来源定位、字段完整性、证据覆盖、遗漏和冲突；
+- L2：战略总控裁决来源可靠性、方法、参数、解释和科学结论。
 
-投稿/申报、安全或高成本、关键参数、核心方法和最终科学结论自动执行 L2。Sol 只做一次紧凑验收，不重新写全文。
+投稿/申报、安全或高成本、关键参数、核心方法和最终科学结论执行 L2。战略总控只做一次紧凑验收。
 
 ## 何时分阶段
 
@@ -119,14 +117,20 @@ CodeGraph 只可能降低代码探索 Token，不能替代文献、PDF、实验�
 
 ## 项目级模型路由
 
-Windows Codex 应用通过以下文件自动路由：
+Windows Codex 应用通过以下文件解析路由：
 
-- `.codex/config.toml`：从 canonical strategic tier 固定主线程、启用 multi-agent、注册两个专用角色，并应用 canonical 并发边界；
-- `.codex/agents/research-support.toml`：Terra 只读证据 Worker；
-- `.codex/agents/research-output.toml`：Luna 只读写作 Worker；
-- `shared/MODEL_ROUTING.json`：唯一 canonical 模型映射。
+- `shared/MODEL_ROUTING.json`：公共默认值、安全边界与委派契约；
+- `.research-agent/MODEL_ROUTING.selection.json`：项目自己的模型与 reasoning 选择；
+- `.codex/config.toml`：新任务的战略总控模型；
+- `.codex/agents/research-support.toml` 与 `research-output.toml`：两个只读 Worker。
 
-Worker 不递归委派，也不互相转交。Terra/Luna 不可用时进入 Sol-only，不替换为未经验证的模型。
+在项目根目录双击 `配置科研模型.cmd`，或运行：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-ResearchModels.ps1 -ProjectDirectory '项目路径' -Interactive
+```
+
+默认保持 Sol/`xhigh`、Terra/`medium`、Luna/`low`。模型选择对之后启动的新任务生效；已运行的主线程不会动态换模型。选择脚本会先保存配置，再通过 `codex debug models` 校验当前运行时。当前模型目录缺少 Astra 时会记录 `blocked_model_catalog`，升级运行时或改回 Sol 后即可启动。Worker 不递归委派，也不互相转交。
 
 ## 使用
 
@@ -207,7 +211,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\New-ResearchProjec
 ### 2026-07-16 · `v2.1.0`
 
 - 增加 Windows 一键启动、最近项目、桌面快捷方式和 Codex Desktop 图形界面入口。
-- 建立 canonical 路由快照、SHA256 校验、模型目录预检以及 `ready / degraded_sol_only / blocked_conflict` 状态。
+- 建立 canonical 路由快照、SHA256 校验、模型目录预检以及 `ready / degraded_strategic_only / blocked_conflict` 状态。
 - 增加复制安装、同步、ZIP 备份、Sol-only 降级和项目初始化等端到端回归测试。
 - 修复中文编码、路径解析、模板重复创建、配置竞态覆盖和 PowerShell 语法误报等问题。
 

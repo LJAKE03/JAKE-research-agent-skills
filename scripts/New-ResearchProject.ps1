@@ -142,6 +142,7 @@ if ($PSCmdlet.ShouldProcess($target, '创建科研项目')) {
         '.codex\agents\research-support.toml',
         '.codex\agents\research-output.toml',
         '.research-agent\MODEL_ROUTING.json',
+        '.research-agent\MODEL_ROUTING.selection.json',
         '.research-agent\MODEL_ROUTING.md',
         '.research-agent\routing-version.json'
     )) {
@@ -157,12 +158,12 @@ if ($PSCmdlet.ShouldProcess($target, '创建科研项目')) {
     if ($snapshotHash -ne $canonicalHash -or [string]$routingStatus.canonical_sha256 -ne $canonicalHash) {
         throw 'New project routing snapshot does not match canonical bytes.'
     }
-    if ([int]$routingStatus.conflict_count -ne 0 -or [string]$routingStatus.status -notin @('ready','degraded_sol_only')) {
+    if ([int]$routingStatus.conflict_count -ne 0 -or [string]$routingStatus.status -notin @('ready','degraded_strategic_only')) {
         throw "New project routing is not usable: status=$($routingStatus.status) conflicts=$($routingStatus.conflict_count)"
     }
-    if ([string]$routingStatus.status -eq 'degraded_sol_only') {
-        if ([string]$routingStatus.catalog.status -ne 'verified' -or -not [bool]$routingStatus.catalog.routing_models.strategic -or 'strategic' -in @($routingStatus.unavailable_tiers)) { throw 'New project has invalid Sol-only status.' }
-        Write-Warning "New project uses Sol-only routing; unavailable tiers: $(@($routingStatus.unavailable_tiers) -join ',')"
+    if ([string]$routingStatus.status -eq 'degraded_strategic_only') {
+        if ([string]$routingStatus.catalog.status -ne 'verified' -or -not [bool]$routingStatus.catalog.routing_models.strategic -or 'strategic' -in @($routingStatus.unavailable_tiers)) { throw 'New project has invalid strategic-only status.' }
+        Write-Warning "New project uses strategic-only routing; unavailable tiers: $(@($routingStatus.unavailable_tiers) -join ',')"
     }
     if ($null -ne $workspaceIndexPath) {
         $workspaceProjects[-1].status = 'active'

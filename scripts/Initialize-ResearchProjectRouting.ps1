@@ -12,7 +12,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$TemplateVersion = 'research-routing-v5'
+$TemplateVersion = 'research-routing-v6'
 $ManagedStart = '<!-- research-agent-routing:start -->'
 $ManagedEnd = '<!-- research-agent-routing:end -->'
 $Utf8NoBom = New-Object Text.UTF8Encoding($false)
@@ -48,7 +48,7 @@ function Assert-CanonicalRoutingContract {
   param([object]$Routing)
   Assert-HasProperties $Routing 'root' @('schema_version','configuration_version','model_mapping_version','provider','primary_surface','verified_with','workflow','runtime_preflight','runtime_dispatch','tiers','fallback','delegation','quality_gates')
   Assert-HasProperties $Routing.verified_with 'verified_with' @('command','codex_cli_version')
-  Assert-HasProperties $Routing.workflow 'workflow' @('default','max_initial_blocking_questions','continue_low_risk_work_packages','sol_semantic_acceptance_when')
+  Assert-HasProperties $Routing.workflow 'workflow' @('default','max_initial_blocking_questions','continue_low_risk_work_packages','strategic_semantic_acceptance_when')
   Assert-HasProperties $Routing.runtime_preflight 'runtime_preflight' @('command','strategic_unavailable_status','support_or_economy_unavailable_status')
   Assert-HasProperties $Routing.runtime_dispatch 'runtime_dispatch' @('support_agent_type','economy_agent_type','fork_turns','preferred_call_shape','compatible_call_shape','isolated_call_shape','require_runtime_evidence','require_spawn_evidence','self_report_is_evidence','failure_status')
   Assert-HasProperties $Routing.tiers 'tiers' @('strategic','support','economy')
@@ -63,11 +63,11 @@ function Assert-CanonicalRoutingContract {
   if ([string]::IsNullOrWhiteSpace([string]$Routing.configuration_version) -or [string]::IsNullOrWhiteSpace([string]$Routing.model_mapping_version)) { throw 'canonical contract requires version fields' }
   if ([string]$Routing.provider -ne 'ChatGPT Windows desktop app and Codex' -or [string]$Routing.primary_surface -ne 'project-scoped .codex agents') { throw 'canonical provider/surface contract is invalid' }
   if ([string]$Routing.verified_with.command -ne 'codex debug models' -or [string]::IsNullOrWhiteSpace([string]$Routing.verified_with.codex_cli_version)) { throw 'canonical verification contract is invalid' }
-  $acceptanceWhen = @($Routing.workflow.sol_semantic_acceptance_when)
+  $acceptanceWhen = @($Routing.workflow.strategic_semantic_acceptance_when)
   $expectedAcceptanceWhen = @('publication_or_submission','key_parameter_or_core_method','safety_or_high_cost_decision','scientific_final_acceptance')
   if ([string]$Routing.workflow.default -ne 'unified' -or [int]$Routing.workflow.max_initial_blocking_questions -lt 0 -or [int]$Routing.workflow.max_initial_blocking_questions -gt 2 -or -not [bool]$Routing.workflow.continue_low_risk_work_packages -or (($acceptanceWhen -join '|') -ne ($expectedAcceptanceWhen -join '|'))) { throw 'canonical workflow contract is invalid' }
-  if ([string]$Routing.runtime_preflight.command -ne 'codex debug models' -or [string]$Routing.runtime_preflight.strategic_unavailable_status -ne 'blocked_model_catalog' -or [string]$Routing.runtime_preflight.support_or_economy_unavailable_status -ne 'degraded_sol_only') { throw 'canonical runtime_preflight contract is invalid' }
-  if ([string]$Routing.runtime_dispatch.support_agent_type -ne 'research_support' -or [string]$Routing.runtime_dispatch.economy_agent_type -ne 'research_output' -or [string]$Routing.runtime_dispatch.fork_turns -ne 'none' -or [string]$Routing.runtime_dispatch.preferred_call_shape -ne 'agent_type' -or [string]$Routing.runtime_dispatch.compatible_call_shape -ne 'explicit_model' -or [string]$Routing.runtime_dispatch.isolated_call_shape -ne 'codex_exec' -or -not [bool]$Routing.runtime_dispatch.require_runtime_evidence -or -not [bool]$Routing.runtime_dispatch.require_spawn_evidence -or [bool]$Routing.runtime_dispatch.self_report_is_evidence -or [string]$Routing.runtime_dispatch.failure_status -ne 'degraded_sol_only') { throw 'canonical runtime_dispatch contract is invalid' }
+  if ([string]$Routing.runtime_preflight.command -ne 'codex debug models' -or [string]$Routing.runtime_preflight.strategic_unavailable_status -ne 'blocked_model_catalog' -or [string]$Routing.runtime_preflight.support_or_economy_unavailable_status -ne 'degraded_strategic_only') { throw 'canonical runtime_preflight contract is invalid' }
+  if ([string]$Routing.runtime_dispatch.support_agent_type -ne 'research_support' -or [string]$Routing.runtime_dispatch.economy_agent_type -ne 'research_output' -or [string]$Routing.runtime_dispatch.fork_turns -ne 'none' -or [string]$Routing.runtime_dispatch.preferred_call_shape -ne 'agent_type' -or [string]$Routing.runtime_dispatch.compatible_call_shape -ne 'explicit_model' -or [string]$Routing.runtime_dispatch.isolated_call_shape -ne 'codex_exec' -or -not [bool]$Routing.runtime_dispatch.require_runtime_evidence -or -not [bool]$Routing.runtime_dispatch.require_spawn_evidence -or [bool]$Routing.runtime_dispatch.self_report_is_evidence -or [string]$Routing.runtime_dispatch.failure_status -ne 'degraded_strategic_only') { throw 'canonical runtime_dispatch contract is invalid' }
 
   $expectedTierContract = @{
     strategic = @{ effort='xhigh'; sandbox='workspace-write' }
@@ -82,7 +82,7 @@ function Assert-CanonicalRoutingContract {
     $models.Add([string]$tier.model)
   }
   if (@($models | Select-Object -Unique).Count -ne 3) { throw 'canonical routing models must be distinct' }
-  if ([bool]$Routing.fallback.same_model_reasoning_tiers -or [string]$Routing.fallback.status -ne 'degraded_sol_only' -or [string]$Routing.fallback.when_support_or_economy_is_unavailable -ne 'return the bounded task to strategic Sol; do not substitute an unverified model') { throw 'canonical fallback contract is invalid' }
+  if (-not [bool]$Routing.fallback.same_model_reasoning_tiers -or [string]$Routing.fallback.status -ne 'degraded_strategic_only' -or [string]$Routing.fallback.when_support_or_economy_is_unavailable -ne 'return the bounded task to the strategic controller; do not substitute an unverified model') { throw 'canonical fallback contract is invalid' }
   if ([int]$Routing.delegation.max_threads -ne 2 -or [int]$Routing.delegation.max_depth -ne 1 -or [bool]$Routing.delegation.subagents_may_delegate -or -not [bool]$Routing.delegation.main_agent_reads_every_result -or -not [bool]$Routing.delegation.main_agent_final_review) { throw 'canonical delegation safety contract is invalid' }
   if ([string]$Routing.quality_gates.L0 -ne 'deterministic tool checks' -or [string]$Routing.quality_gates.L1 -ne 'read-only provenance and evidence-completeness checks' -or [string]$Routing.quality_gates.L2 -ne 'strategic scientific judgement and final acceptance') { throw 'canonical quality-gate contract is invalid' }
 }
@@ -120,17 +120,56 @@ function Test-RoutingModelCatalog {
 }
 
 Assert-CanonicalRoutingContract $CanonicalRouting
+
+function Get-ResolvedRouting {
+  param([object]$Canonical,[string]$SelectionPath)
+  $resolved = ($Canonical | ConvertTo-Json -Depth 20 | ConvertFrom-Json)
+  if (-not (Test-Path -LiteralPath $SelectionPath -PathType Leaf)) { return $resolved }
+  try { $selection = Get-Content -Raw -Encoding UTF8 -LiteralPath $SelectionPath | ConvertFrom-Json }
+  catch { throw "项目模型选择无法解析：$($_.Exception.Message)" }
+
+  Assert-HasProperties $selection 'selection' @('schema_version','tiers')
+  if ([int]$selection.schema_version -ne 1) { throw '项目模型选择要求 schema_version=1' }
+  Assert-HasProperties $selection.tiers 'selection.tiers' @('strategic','support','economy')
+
+  $allowedModels = @{
+    strategic = @('gpt-5.6-sol','gpt-6-astra')
+    support = @('gpt-5.6-sol','gpt-5.6-terra','gpt-5.6-luna')
+    economy = @('gpt-5.6-sol','gpt-5.6-terra','gpt-5.6-luna')
+  }
+  $allowedEfforts = @{
+    'gpt-6-astra' = @('low','medium','high','xhigh','max')
+    'gpt-5.6-sol' = @('low','medium','high','xhigh','max','ultra')
+    'gpt-5.6-terra' = @('low','medium','high','xhigh','max','ultra')
+    'gpt-5.6-luna' = @('low','medium','high','xhigh','max')
+  }
+  foreach($tierName in @('strategic','support','economy')) {
+    $tier = $selection.tiers.$tierName
+    Assert-HasProperties $tier "selection.tiers.$tierName" @('model','reasoning_effort')
+    $model = [string]$tier.model
+    $effort = [string]$tier.reasoning_effort
+    if ($model -cnotin @($allowedModels[$tierName])) { throw "项目模型选择不允许 $($tierName) 使用 $model" }
+    if ($effort -cnotin @($allowedEfforts[$model])) { throw "项目模型选择不允许 $model 使用 reasoning_effort=$effort" }
+    $resolved.tiers.$tierName.model = $model
+    $resolved.tiers.$tierName.reasoning_effort = $effort
+  }
+  return $resolved
+}
+
+$SelectionPath = Join-Path $ManagedRoot 'MODEL_ROUTING.selection.json'
+$ResolvedRouting = Get-ResolvedRouting -Canonical $CanonicalRouting -SelectionPath $SelectionPath
+$SelectionHash = if (Test-Path -LiteralPath $SelectionPath -PathType Leaf) { (Get-FileHash -Algorithm SHA256 -LiteralPath $SelectionPath).Hash } else { '' }
 $ConfigurationVersion = [string]$CanonicalRouting.configuration_version
 $ModelMappingVersion = [string]$CanonicalRouting.model_mapping_version
 $MaxThreads = [int]$CanonicalRouting.delegation.max_threads
 $MaxDepth = [int]$CanonicalRouting.delegation.max_depth
-$StrategicModel = [string]$CanonicalRouting.tiers.strategic.model
-$StrategicEffort = [string]$CanonicalRouting.tiers.strategic.reasoning_effort
+$StrategicModel = [string]$ResolvedRouting.tiers.strategic.model
+$StrategicEffort = [string]$ResolvedRouting.tiers.strategic.reasoning_effort
 $SupportAgentType = [string]$CanonicalRouting.runtime_dispatch.support_agent_type
 $EconomyAgentType = [string]$CanonicalRouting.runtime_dispatch.economy_agent_type
 $BlockedModelCatalogStatus = [string]$CanonicalRouting.runtime_preflight.strategic_unavailable_status
 $DegradedStatus = [string]$CanonicalRouting.runtime_preflight.support_or_economy_unavailable_status
-$CatalogCheck = Test-RoutingModelCatalog $CanonicalRouting
+$CatalogCheck = Test-RoutingModelCatalog $ResolvedRouting
 
 function Write-Utf8Text {
   param([string]$Path,[string]$Text)
@@ -302,8 +341,8 @@ function Update-ExecutableAgentConfig {
   }
 
   foreach($role in @(
-    @{Name=$SupportAgentType;File='agents/research-support.toml';Description='Read-only Terra worker for bounded evidence work.'},
-    @{Name=$EconomyAgentType;File='agents/research-output.toml';Description='Read-only Luna worker for locked-package writing.'}
+    @{Name=$SupportAgentType;File='agents/research-support.toml';Description='Read-only worker for bounded evidence work.'},
+    @{Name=$EconomyAgentType;File='agents/research-output.toml';Description='Read-only worker for locked-package single-deliverable output.'}
   )) {
     $header = '[agents.' + [string]$role.Name + ']'
     $match = [regex]::Match($text,('(?m)^\s*\[agents\.{0}\]\s*$' -f [regex]::Escape([string]$role.Name)))
@@ -366,7 +405,7 @@ foreach($agent in @(
   @{File='research-support.toml';Name='research_support';Tier='support'},
   @{File='research-output.toml';Name='research_output';Tier='economy'}
 )) {
-  $tier = $CanonicalRouting.tiers.($agent.Tier)
+  $tier = $ResolvedRouting.tiers.($agent.Tier)
   $relative = '.codex/agents/' + $agent.File
   $source = Join-Path $TemplateRoot ('.codex\agents\' + $agent.File)
   $target = Join-Path $ProjectDirectory ('.codex\agents\' + $agent.File)
@@ -423,6 +462,13 @@ if ($null -ne $versionCurrent) {
       [string]$versionCurrent.template_version -eq $TemplateVersion -and
       [string]$versionCurrent.canonical_sha256 -eq $CanonicalRoutingHash -and
       [string]$versionCurrent.snapshot_sha256 -eq $ProjectRoutingHash -and
+      [string]$versionCurrent.selection_sha256 -eq $SelectionHash -and
+      [string]$versionCurrent.resolved_tiers.strategic.model -eq [string]$ResolvedRouting.tiers.strategic.model -and
+      [string]$versionCurrent.resolved_tiers.strategic.reasoning_effort -eq [string]$ResolvedRouting.tiers.strategic.reasoning_effort -and
+      [string]$versionCurrent.resolved_tiers.support.model -eq [string]$ResolvedRouting.tiers.support.model -and
+      [string]$versionCurrent.resolved_tiers.support.reasoning_effort -eq [string]$ResolvedRouting.tiers.support.reasoning_effort -and
+      [string]$versionCurrent.resolved_tiers.economy.model -eq [string]$ResolvedRouting.tiers.economy.model -and
+      [string]$versionCurrent.resolved_tiers.economy.reasoning_effort -eq [string]$ResolvedRouting.tiers.economy.reasoning_effort -and
       [int]$versionCurrent.conflict_count -eq $conflicts.Count -and
       [string]$versionCurrent.catalog.status -eq [string]$CatalogCheck.Status -and
       [string]$versionCurrent.catalog.command -eq [string]$CatalogCheck.Command -and
@@ -443,6 +489,12 @@ if (-not $versionMatches -or $changes.Count -gt 0) {
     template_version = $TemplateVersion
     canonical_sha256 = $CanonicalRoutingHash
     snapshot_sha256 = $ProjectRoutingHash
+    selection_sha256 = $SelectionHash
+    resolved_tiers = [ordered]@{
+      strategic = [ordered]@{ model=[string]$ResolvedRouting.tiers.strategic.model; reasoning_effort=[string]$ResolvedRouting.tiers.strategic.reasoning_effort }
+      support = [ordered]@{ model=[string]$ResolvedRouting.tiers.support.model; reasoning_effort=[string]$ResolvedRouting.tiers.support.reasoning_effort }
+      economy = [ordered]@{ model=[string]$ResolvedRouting.tiers.economy.model; reasoning_effort=[string]$ResolvedRouting.tiers.economy.reasoning_effort }
+    }
     schema_version = [int]$CanonicalRouting.schema_version
     conflict_count = $conflicts.Count
     catalog = [ordered]@{
