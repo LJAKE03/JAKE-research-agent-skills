@@ -42,8 +42,10 @@
 
 ## Git / PR 追溯
 
-- 工作副本：`D:\LMJ\AI Learning\AI-agent\skills-hub\suite\JAKE-research-agent-skills`
-- 当前状态：本地待审阅，尚未推送 GitHub。
+- 发布分支：[agent/v2.5-configurable-model-routing](https://github.com/LJAKE03/JAKE-research-agent-skills/tree/agent/v2.5-configurable-model-routing)
+- 功能提交：[fac32db](https://github.com/LJAKE03/JAKE-research-agent-skills/commit/fac32db21bb381f0d57a72361851a6c3dc9acf97)
+- Pull Request：[#16](https://github.com/LJAKE03/JAKE-research-agent-skills/pull/16)
+- 当前状态：已上传，待合并。
 
 - 完整套件检查：`scripts/Test-ResearchSkills.ps1` 返回 `FINAL PASS`。
 - UTF-8 检查：Windows PowerShell 5.1 与 PowerShell 7.6.5 均返回 `RESEARCH_ENCODING_PASS`。

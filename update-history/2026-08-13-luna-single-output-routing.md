@@ -1,6 +1,6 @@
 # Luna 单一低判断成品路由
 
-状态：待合并
+状态：已上传，待合并
 
 ## 背景与根因
 
@@ -31,4 +31,7 @@
 
 ## Git / PR 追溯
 
-本记录随当前工作树待合并。提交或 PR 建立后在此补充链接；当前变更可通过 `git diff -- shared/MODEL_ROUTING.json .codex/agents/research-output.toml 00-research-orchestrator/SKILL.md 05-academic-writing/SKILL.md evals/evals.json` 追溯。
+- 发布分支：[agent/v2.5-configurable-model-routing](https://github.com/LJAKE03/JAKE-research-agent-skills/tree/agent/v2.5-configurable-model-routing)
+- 功能提交：[fac32db](https://github.com/LJAKE03/JAKE-research-agent-skills/commit/fac32db21bb381f0d57a72361851a6c3dc9acf97)
+- Pull Request：[#16](https://github.com/LJAKE03/JAKE-research-agent-skills/pull/16)
+- 本项更新与项目级模型选择一同上传，可通过上述 PR 的文件差异追溯。
