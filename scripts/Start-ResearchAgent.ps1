@@ -372,9 +372,9 @@ function Confirm-ProjectReady {
   $unavailable=@($routingStatus.unavailable_tiers)
   if($routingState -eq 'ready'){
     if($catalogState -ne 'verified' -or $unavailable.Count -ne 0){throw 'Ready status has inconsistent catalog evidence.'}
-  }elseif($routingState -eq 'degraded_sol_only'){
-    if($catalogState -ne 'verified' -or -not [bool]$routingStatus.catalog.routing_models.strategic -or 'strategic' -in $unavailable -or $unavailable.Count -eq 0){throw 'Invalid Sol-only degraded status.'}
-    Write-Warning "Routing degraded to Sol-only; unavailable tiers: $($unavailable -join ',')"
+  }elseif($routingState -eq 'degraded_strategic_only'){
+    if($catalogState -ne 'verified' -or -not [bool]$routingStatus.catalog.routing_models.strategic -or 'strategic' -in $unavailable -or $unavailable.Count -eq 0){throw 'Invalid strategic-only degraded status.'}
+    Write-Warning "Routing degraded to strategic-only; unavailable tiers: $($unavailable -join ',')"
   }else{throw "Routing preflight is not ready: status=$routingState catalog=$catalogState"}
 
   return [string]$path
@@ -408,11 +408,27 @@ function Open-ProjectInteractive {
   try{return (Confirm-ProjectReady $path)}catch{Show-Message $_.Exception.Message '打开项目失败' -Error;return $null}
 }
 
-function Get-NewPrompt {
-  param([string]$Task)
-  if([string]::IsNullOrWhiteSpace($Task)){$Task='（未填写；进入 Codex Desktop 后再输入。）'}
+function Get-ResolvedProjectRouting {
+  param([string]$Project)
   $routingPath=Join-Path $script:RepositoryRoot 'shared\MODEL_ROUTING.json'
   try{$routing=Get-Content -Raw -Encoding UTF8 -LiteralPath $routingPath|ConvertFrom-Json}catch{throw "canonical 路由配置无效：$($_.Exception.Message)"}
+  if(-not [string]::IsNullOrWhiteSpace($Project)){
+    $selectionPath=Join-Path $Project '.research-agent\MODEL_ROUTING.selection.json'
+    if(Test-Path -LiteralPath $selectionPath -PathType Leaf){
+      try{$selection=Get-Content -Raw -Encoding UTF8 -LiteralPath $selectionPath|ConvertFrom-Json}catch{throw "项目模型选择无效：$($_.Exception.Message)"}
+      foreach($tier in @('strategic','support','economy')){
+        $routing.tiers.$tier.model=[string]$selection.tiers.$tier.model
+        $routing.tiers.$tier.reasoning_effort=[string]$selection.tiers.$tier.reasoning_effort
+      }
+    }
+  }
+  return $routing
+}
+
+function Get-NewPrompt {
+  param([string]$Task,[string]$Project='')
+  if([string]::IsNullOrWhiteSpace($Task)){$Task='（未填写；进入 Codex Desktop 后再输入。）'}
+  $routing=Get-ResolvedProjectRouting $Project
   $dispatch=$routing.runtime_dispatch
   $support=$routing.tiers.support
   $economy=$routing.tiers.economy
@@ -436,15 +452,15 @@ function Get-NewPrompt {
 可以通过文件或互联网查明的信息优先自行查明；
 只有用户能够决定的高影响问题才向用户提问。
 
-不要立即完成整个大型任务。
-运行一条统一科研流程；不要要求用户选择模型、Agent 或工作模式。
-Sol 负责需求、规划、拆解、方法、证据综合和关键科研判断。
-需要检索、网页查证、文件扫描、提取或证据表且路由状态为 ready 时，必须创建专用 Worker：优先 spawn_agent(agent_type=【support_agent_type】, fork_turns=【fork_turns】)；若工具不支持 agent_type，则使用 spawn_agent(task_name=【support_agent_type】, model=【support_model】, reasoning_effort=【support_effort】, fork_turns=【fork_turns】)。
-需要正式章节、多段成稿、表格、语言版本或格式化文本时，Sol 先锁定提纲、论点、证据编号和格式，再优先 spawn_agent(agent_type=【economy_agent_type】, fork_turns=【fork_turns】)；若工具不支持 agent_type，则使用 spawn_agent(task_name=【economy_agent_type】, model=【economy_model】, reasoning_effort=【economy_effort】, fork_turns=【fork_turns】)。
-角色形态由 TOML 锁定模型；显式模型形态只能使用 canonical 值并在任务卡中重申只读、禁止递归委派和紧凑交接。若 spawn 无法锁定目标模型，则用官方一次性 codex --disable multi_agent exec --strict-config --ephemeral --ignore-user-config --json --color never --sandbox read-only，并用 -m 和 model_reasoning_effort 锁定 Terra/Luna；只传紧凑任务卡，完成即退出。真实子线程、成功 spawn，或退出码为 0 且返回合规交接包的一次性调用才算运行证据。
-三种调用形态都不可用、模型不可用或一次合规调用失败时标记 【failure_status】，由 Sol 完成当前有界任务并透明说明；不得假称已经调用 Terra/Luna。
+运行一条统一科研流程；只在真实依赖存在时拆分工作包。
+遵循项目已保存的模型选择；没有选择文件时使用默认路由。
+战略总控负责需求、规划、拆解、方法、证据综合和关键科研判断。
+需要检索、网页查证、文件扫描、提取或证据表，且任务可独立分离、委派收益超过开销、路由状态为 ready 时，创建专用 Worker：优先 spawn_agent(agent_type=【support_agent_type】, fork_turns=【fork_turns】)；若工具不支持 agent_type，则使用 spawn_agent(task_name=【support_agent_type】, model=【support_model】, reasoning_effort=【support_effort】, fork_turns=【fork_turns】)。
+需要正式章节、多段成稿、表格、语言版本或格式化文本，且输出包已锁定、任务可独立分离、委派收益超过开销时，战略总控再优先 spawn_agent(agent_type=【economy_agent_type】, fork_turns=【fork_turns】)；若工具不支持 agent_type，则使用 spawn_agent(task_name=【economy_agent_type】, model=【economy_model】, reasoning_effort=【economy_effort】, fork_turns=【fork_turns】)。
+角色形态由 TOML 锁定模型；显式模型形态只能使用项目已解析的路由值并在任务卡中重申只读、禁止递归委派和紧凑交接。若 spawn 无法锁定目标模型，则用官方一次性 codex --disable multi_agent exec --strict-config --ephemeral --ignore-user-config --json --color never --sandbox read-only，并用 -m 和 model_reasoning_effort 锁定所选 Worker 模型；只传紧凑任务卡，完成即退出。真实子线程、成功 spawn，或退出码为 0 且返回合规交接包的一次性调用才算运行证据。
+三种调用形态都不可用、模型不可用或一次合规调用失败时标记 【failure_status】，由战略总控完成当前有界任务并透明说明；不得假称已经调用 Worker。
 只有真实依赖才创建阶段；Worker 不互相转交，不接收完整历史、全部日志或整篇原文。
-投稿、关键参数、核心方法和最终科学结论由 Sol 做一次紧凑语义验收，不重新写全文。
+投稿、关键参数、核心方法和最终科学结论由战略总控做一次紧凑语义验收，不重新写全文。
 '@
   return $template.Replace('【用户输入的任务】',$Task).
     Replace('【support_agent_type】',[string]$dispatch.support_agent_type).
@@ -623,7 +639,7 @@ function Invoke-Launcher {
   $settings=Get-Settings
   while($true){
     switch(Show-Menu){
-      '1' {$project=New-ProjectInteractive $settings;if($project){Assert-NoPendingProjectState -ProjectDirectory $project;$task=Read-Text '请输入本次要完成的科研任务。可留空，进入 Codex Desktop 后再输入。' '本次科研任务';Update-Recent $project $settings;if(Start-CodexDesktop $project (Get-NewPrompt $task)){return}}}
+      '1' {$project=New-ProjectInteractive $settings;if($project){Assert-NoPendingProjectState -ProjectDirectory $project;$task=Read-Text '请输入本次要完成的科研任务。可留空，进入 Codex Desktop 后再输入。' '本次科研任务';Update-Recent $project $settings;if(Start-CodexDesktop $project (Get-NewPrompt $task $project)){return}}}
       '2' {$project=Open-ProjectInteractive $settings;if($project){Assert-NoPendingProjectState -ProjectDirectory $project;$task=Read-Text '请输入本次要完成的科研任务。可留空，进入 Codex Desktop 后再输入。' '本次科研任务';Update-Recent $project $settings;if(Start-CodexDesktop $project (Get-ExistingPrompt $task)){return}}}
       '3' {$settings=Get-Settings;if(-not $settings.RecentProjectPath){Show-Message '没有可用的最近项目。' -Error;continue};$project=Confirm-ProjectReady $settings.RecentProjectPath;if($project){Assert-NoPendingProjectState -ProjectDirectory $project;$task=Read-Text '请输入本次要完成的科研任务。可留空，进入 Codex Desktop 后再输入。' '本次科研任务';Update-Recent $project $settings;if(Start-CodexDesktop $project (Get-ExistingPrompt $task)){return}}}
       '4' {Invoke-SkillCheck}

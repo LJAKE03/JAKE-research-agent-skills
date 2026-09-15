@@ -68,6 +68,7 @@ try {
     '.codex\agents\research-support.toml',
     '.codex\agents\research-output.toml',
     '.research-agent\MODEL_ROUTING.json',
+    '.research-agent\MODEL_ROUTING.selection.json',
     '.research-agent\MODEL_ROUTING.md',
     '.research-agent\routing-version.json'
   )) { Assert-Test (Test-Path -LiteralPath (Join-Path $newProject $relative) -PathType Leaf) "new project contains $relative" }
@@ -94,7 +95,7 @@ try {
   Assert-Test ([string]$routingStatus.status -eq 'ready' -and [int]$routingStatus.conflict_count -eq 0) 'new project routing status is ready'
   Assert-Test ([string]$routingStatus.canonical_sha256 -eq $canonicalHash -and [string]$routingStatus.snapshot_sha256 -eq $canonicalHash) 'new project canonical and snapshot hashes recorded'
   $agents = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $newProject 'AGENTS.md')
-  foreach($token in @('Sol','Terra','Luna','PowerShell','Python','`rg`','`git diff`','紧凑交接 Schema','互相转交',"max_threads=$expectedMaxThreads","max_depth=$expectedMaxDepth",'research-agent-routing:start','research-agent-routing:end')) {
+  foreach($token in @('战略总控','证据 Worker','输出 Worker','PowerShell','Python','`rg`','`git diff`','紧凑交接 Schema','互相转交',"max_threads=$expectedMaxThreads","max_depth=$expectedMaxDepth",'research-agent-routing:start','research-agent-routing:end')) {
     Assert-Test ($agents.Contains($token)) "AGENTS contains $token"
   }
 
@@ -106,7 +107,7 @@ try {
     Assert-Test (Test-Path -LiteralPath (Join-Path (Split-Path -Parent $skillPath) '..\shared\MODEL_ROUTING.json') -PathType Leaf) "$name relative routing reference resolves"
   }
   $orchestratorText=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '00-research-orchestrator\SKILL.md')
-  Assert-Test ($orchestratorText.Contains('../shared/MODEL_ROUTING.json') -and $orchestratorText.Contains('../shared/STAGE_HANDOFF.schema.json') -and $orchestratorText.Contains('Sol') -and $orchestratorText.Contains('Terra') -and $orchestratorText.Contains('Luna')) 'orchestrator model and handoff references resolve'
+  Assert-Test ($orchestratorText.Contains('../shared/MODEL_ROUTING.json') -and $orchestratorText.Contains('../shared/STAGE_HANDOFF.schema.json') -and $orchestratorText.Contains('战略总控') -and $orchestratorText.Contains('证据 Worker') -and $orchestratorText.Contains('输出 Worker')) 'orchestrator role and handoff references resolve'
   Assert-Test (-not($orchestratorText -match '\bFast\b|\bStandard\b|\bStrict\b(?!-)|\bExploratory\b|\bDirect\b|\bFocused\b|Open Research|CAPABILITY_MANIFEST|RUNTIME_POLICY')) 'orchestrator has no public modes or runtime framework'
   foreach($relative in @('.research-agent\MODEL_ROUTING.json','.research-agent\MODEL_ROUTING.md')) {
     Assert-Test (Test-Path -LiteralPath (Join-Path $newProject $relative) -PathType Leaf) "project relative reference resolves $relative"
@@ -197,9 +198,9 @@ try {
   $solOnlyJson = '{"models":[{"slug":"gpt-5.6-sol","supported_reasoning_levels":[{"effort":"xhigh"}]}]}'
   $solOnly = Invoke-CatalogScenario -Name 'sol-only scenario' -CatalogJson $solOnlyJson
   Assert-Test ($solOnly.ExitCode -eq 0) 'Sol-only scenario exits zero'
-  Assert-Test ([string]$solOnly.Status.status -eq 'degraded_sol_only') 'Sol-only scenario records degraded status'
+  Assert-Test ([string]$solOnly.Status.status -eq 'degraded_strategic_only') 'Sol-only scenario records degraded status'
   Assert-Test ((@($solOnly.Status.unavailable_tiers) -join ',') -eq 'support,economy') 'Sol-only scenario records unavailable tiers'
-  Assert-Test ($solOnly.Output -match 'Routing degraded to Sol-only' -and $solOnly.Output -match 'ROUTING_PROJECT_READY') 'Sol-only scenario warns and remains launchable'
+  Assert-Test ($solOnly.Output -match 'Routing degraded to strategic-only' -and $solOnly.Output -match 'ROUTING_PROJECT_READY') 'Sol-only scenario warns and remains launchable'
 
   $noSolJson = '{"models":[{"slug":"gpt-5.6-terra","supported_reasoning_levels":[{"effort":"medium"}]},{"slug":"gpt-5.6-luna","supported_reasoning_levels":[{"effort":"low"}]}]}'
   $noSol = Invoke-CatalogScenario -Name 'no-sol scenario' -CatalogJson $noSolJson

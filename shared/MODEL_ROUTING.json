@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
-  "configuration_version": "1.5.0",
-  "model_mapping_version": "sol-terra-luna-unified-v5",
+  "configuration_version": "1.7.0",
+  "model_mapping_version": "configurable-controller-workers-v6",
   "provider": "ChatGPT Windows desktop app and Codex",
   "primary_surface": "project-scoped .codex agents",
   "verified_with": {
@@ -12,12 +12,12 @@
     "default": "unified",
     "max_initial_blocking_questions": 2,
     "continue_low_risk_work_packages": true,
-    "sol_semantic_acceptance_when": ["publication_or_submission", "key_parameter_or_core_method", "safety_or_high_cost_decision", "scientific_final_acceptance"]
+    "strategic_semantic_acceptance_when": ["publication_or_submission", "key_parameter_or_core_method", "safety_or_high_cost_decision", "scientific_final_acceptance"]
   },
   "runtime_preflight": {
     "command": "codex debug models",
     "strategic_unavailable_status": "blocked_model_catalog",
-    "support_or_economy_unavailable_status": "degraded_sol_only"
+    "support_or_economy_unavailable_status": "degraded_strategic_only"
   },
   "runtime_dispatch": {
     "support_agent_type": "research_support",
@@ -29,7 +29,7 @@
     "require_runtime_evidence": true,
     "require_spawn_evidence": true,
     "self_report_is_evidence": false,
-    "failure_status": "degraded_sol_only"
+    "failure_status": "degraded_strategic_only"
   },
   "tiers": {
     "strategic": {
@@ -48,13 +48,13 @@
       "model": "gpt-5.6-luna",
       "reasoning_effort": "low",
       "sandbox_mode": "read-only",
-      "purpose": "prose drafting, language, and formatting from a complete locked research writing package"
+      "purpose": "low-judgement single-deliverable output drafting, prose, tables, language, and formatting from a complete locked output package"
     }
   },
   "fallback": {
-    "same_model_reasoning_tiers": false,
-    "status": "degraded_sol_only",
-    "when_support_or_economy_is_unavailable": "return the bounded task to strategic Sol; do not substitute an unverified model"
+    "same_model_reasoning_tiers": true,
+    "status": "degraded_strategic_only",
+    "when_support_or_economy_is_unavailable": "return the bounded task to the strategic controller; do not substitute an unverified model"
   },
   "delegation": {
     "max_threads": 2,

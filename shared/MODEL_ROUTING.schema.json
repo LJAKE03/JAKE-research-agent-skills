@@ -23,12 +23,12 @@
     "workflow": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["default", "max_initial_blocking_questions", "continue_low_risk_work_packages", "sol_semantic_acceptance_when"],
+      "required": ["default", "max_initial_blocking_questions", "continue_low_risk_work_packages", "strategic_semantic_acceptance_when"],
       "properties": {
         "default": {"const": "unified"},
         "max_initial_blocking_questions": {"type": "integer", "minimum": 0, "maximum": 2},
         "continue_low_risk_work_packages": {"const": true},
-        "sol_semantic_acceptance_when": {
+        "strategic_semantic_acceptance_when": {
           "type": "array",
           "minItems": 4,
           "maxItems": 4,
@@ -50,7 +50,7 @@
       "properties": {
         "command": {"const": "codex debug models"},
         "strategic_unavailable_status": {"const": "blocked_model_catalog"},
-        "support_or_economy_unavailable_status": {"const": "degraded_sol_only"}
+        "support_or_economy_unavailable_status": {"const": "degraded_strategic_only"}
       }
     },
     "runtime_dispatch": {
@@ -67,7 +67,7 @@
         "require_runtime_evidence": {"const": true},
         "require_spawn_evidence": {"const": true},
         "self_report_is_evidence": {"const": false},
-        "failure_status": {"const": "degraded_sol_only"}
+        "failure_status": {"const": "degraded_strategic_only"}
       }
     },
     "tiers": {
@@ -85,9 +85,9 @@
       "additionalProperties": false,
       "required": ["same_model_reasoning_tiers", "status", "when_support_or_economy_is_unavailable"],
       "properties": {
-        "same_model_reasoning_tiers": {"const": false},
-        "status": {"const": "degraded_sol_only"},
-        "when_support_or_economy_is_unavailable": {"const": "return the bounded task to strategic Sol; do not substitute an unverified model"}
+        "same_model_reasoning_tiers": {"const": true},
+        "status": {"const": "degraded_strategic_only"},
+        "when_support_or_economy_is_unavailable": {"const": "return the bounded task to the strategic controller; do not substitute an unverified model"}
       }
     },
     "delegation": {

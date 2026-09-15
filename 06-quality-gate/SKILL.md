@@ -1,6 +1,6 @@
 ---
 name: research-quality-gate-and-human-review
-description: Use after a substantial research stage and whenever publication, key parameters, core methods, safety, high-cost decisions, or final scientific conclusions need acceptance. Apply only the lowest sufficient deterministic, provenance, or Sol semantic check; reuse compact handoffs and source locators; return PASS, CONDITIONAL PASS, REVISE, or BLOCKED without creating a separate Reviewer Agent or rewriting the full deliverable.
+description: Use after a substantial research stage and whenever publication, key parameters, core methods, safety, high-cost decisions, or final scientific conclusions need acceptance. Apply only the lowest sufficient deterministic, provenance, or 战略总控 semantic check; reuse compact handoffs and source locators; return PASS, CONDITIONAL PASS, REVISE, or BLOCKED without creating a separate Reviewer Agent or rewriting the full deliverable.
 ---
 
 # 科研质量校核与紧凑验收
@@ -16,7 +16,7 @@ description: Use after a substantial research stage and whenever publication, ke
 
 ### L1：证据完整性检查
 
-由 Terra 或等价只读检查核对：
+由 证据 Worker 或等价只读检查核对：
 
 - 来源定位和元数据；
 - 字段、论断和引用覆盖；
@@ -25,9 +25,9 @@ description: Use after a substantial research stage and whenever publication, ke
 
 L1 不裁决来源真实性、权威性、新颖性、方法适用性或科学结论。
 
-### L2：Sol 语义验收
+### L2：战略总控 语义验收
 
-由 Sol 裁决：
+由 战略总控 裁决：
 
 - 来源是否真实、权威、可靠且足以支撑论断；
 - 方法、参数、边界和解释是否合理；
@@ -41,8 +41,8 @@ L1 不裁决来源真实性、权威性、新颖性、方法适用性或科学�
 - 涉及大材料或跨阶段验收时遵循 `../shared/CONTEXT_EFFICIENCY_PROTOCOL.md`，先检查上下文账本、新鲜度和恢复定位；
 - L1 复用 L0 结果；L2 复用 L0/L1 的摘要和定位；
 - 不重复粘贴原始材料，不重新加载完整项目历史；
-- Luna 草稿验收只读取锁定写作包、草稿、问题定位和必要证据；
-- Sol 只做一次紧凑语义验收，不为验收重新写全文；
+- 输出 Worker 草稿或结构化输出验收只读取锁定输出包、草稿/输出规格、问题定位和必要证据；
+- 战略总控 只做一次紧凑语义验收，不为验收重新写全文；
 - 不新增独立 Reviewer Agent。
 
 公式、单位、数值、工况、参数、异常和支撑最终结论的实现属于科研无损区；缺少精确条件或来源定位时不得用摘要替代验证。

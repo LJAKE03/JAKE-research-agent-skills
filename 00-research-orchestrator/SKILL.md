@@ -1,12 +1,12 @@
 ---
 name: research-project-orchestrator
-description: Mandatory entry and return point for any nontrivial research project, academic task, literature review, SCI paper, technical report, multi-file analysis, or methodology design. Use it to run one unified research workflow, automatically choose the necessary functional Skills and Sol/Terra/Luna responsibilities, pass only compact task cards and handoff packages, invoke proportionate quality checks, and return high-impact decisions to the user. Users never choose a workflow mode, model, or Agent.
+description: Entry and return point for nontrivial research projects, academic tasks, literature reviews, SCI papers, technical reports, multi-file analyses, or methodology design. Use it when the work needs cross-source synthesis, staged dependencies, or high-impact scientific judgement. It coordinates functional Skills, compact handoffs, and proportionate checks. Project users may choose the controller and Worker models before a new task; the orchestrator decides roles and workflow.
 ---
 
 # 科研项目总控与统一工作流
 
 <!-- routing-preflight:required -->
-开始科研任务前读取 `../shared/MODEL_ROUTING.json`。它只定义 Sol、Terra、Luna 的真实模型映射和委派边界，不定义面向用户的工作模式。
+开始非简单科研任务前读取 `../shared/MODEL_ROUTING.json`；项目存在 `.research-agent/MODEL_ROUTING.selection.json` 时再读取该选择文件。前者定义默认值和安全边界，后者只覆盖三个角色的模型与 reasoning。
 
 当任务涉及多来源、多文件、长日志、跨阶段交接或正式科研写作时，再读取 `../shared/CONTEXT_EFFICIENCY_PROTOCOL.md`；简单问答和已知单点读取不额外加载。
 
@@ -18,17 +18,17 @@ description: Mandatory entry and return point for any nontrivial research projec
 
 维持一条连续科研流程，并根据当前工作的性质自动调用功能 Skill 和模型层：
 
-1. Sol 理解需求、确定边界、选择方法、拆解真实依赖并承担科研判断；
-2. Terra 在收到有界证据任务卡后完成检索、查证、扫描、提取和证据表整理；
-3. Sol 综合证据，锁定论点、方法、提纲和允许写入的事实；
-4. Luna 只根据锁定写作包生成文本、格式和语言版本；
-5. 投稿、关键参数、核心方法和最终科学结论由 Sol 做一次紧凑语义验收，不重新写全文。
+1. 战略总控 理解需求、确定边界、选择方法、拆解真实依赖并承担科研判断；
+2. 证据 Worker 在收到有界证据任务卡后完成检索、查证、扫描、提取和证据表整理；
+3. 战略总控 综合证据，锁定论点、方法、提纲和允许写入的事实；
+4. 输出 Worker 优先根据锁定输出包完成单一成品的低判断内容组织、文本、表格、语言和格式规格；
+5. 投稿、关键参数、核心方法和最终科学结论由 战略总控 做一次紧凑语义验收，不重新写全文。
 
-用户不需要选择模型、Agent 或工作模式。是否检索、是否分阶段、是否委派以及质量检查强度都由总控根据任务自动判断。
+用户可在新任务前配置三个角色的模型；是否检索、分阶段、委派以及质量检查强度仍由总控根据任务判断。
 
-## 2. 不可委派的 Sol 责任
+## 2. 不可委派的 战略总控 责任
 
-以下内容始终由 Sol 决定并承担最终责任：
+以下内容始终由 战略总控 决定并承担最终责任：
 
 - 需求理解、范围和成功标准；
 - 总体计划、任务拆解和方法选择；
@@ -37,7 +37,7 @@ description: Mandatory entry and return point for any nontrivial research projec
 - 论点结构、提纲锁定和最终科学结论；
 - 高影响用户检查点与最终答复。
 
-Terra 和 Luna 可以指出缺口、冲突和不确定性，但不得替 Sol 做这些判断。
+证据 Worker 和 输出 Worker 可以指出缺口、冲突和不确定性，但不得替 战略总控 做这些判断。
 
 ## 3. 启动与恢复
 
@@ -46,16 +46,16 @@ Terra 和 Luna 可以指出缺口、冲突和不确定性，但不得替 Sol 做
 3. 按主动关键信息协议先查后问：公开事实先核实，只询问 0–2 个会改变范围、路线或交付物且必须由用户决定的问题。
 4. 低影响、可逆假设可以明确记录后继续；不可把推断写成事实。
 
-简单、低风险且无需外部证据的请求可以由 Sol 直接完成，不制造阶段、任务卡或项目状态。进入总控不等于启动复杂治理。
+简单、低风险且无需外部证据的请求可以由 战略总控 直接完成，不制造阶段、任务卡或项目状态。进入总控不等于启动复杂治理。
 
 ### 项目经验与全局复利闭环
 
 1. 若项目位于已初始化科研工作区中，读取个人工作台和项目 SOP；只按当前任务标签检索相关全局经验，不把全部历史装入上下文。
 2. 项目踩坑、失败尝试、有效方法、利好和工作习惯候选先进入项目复盘，并保留来源、证据、适用边界和不确定性；项目特例不得冒充通用规则。
 3. 仅在阶段边界、重大异常或项目收尾时记录经验。按 A/B/C/D 分级：重要协作原则和稳定工作流详细记录，低影响经验只保留关键步骤，项目特例仅留项目内。
-4. 用户反复纠正同类问题时，Sol 主动合并复现证据并提出更精确的稳定规则候选；重复次数不得替代用户确认。
-5. 项目收尾时，Sol 先核对交付物、质量门、未解决项和敏感信息，再主动形成带编号、证据、边界和建议去向的候选摘要，询问用户批准全部、指定子集、拒绝或延后。
-6. 用户未回复或未明确批准时，不得写入个人全局记忆。工作偏好进入 `RESEARCH_WORKBENCH.md`，通用踩坑与有效方法进入 `GLOBAL_LESSONS.md`，Skill 缺陷进入 `SKILL_FEEDBACK.md`；公共 Skill 修改仍需独立评审和回归测试。
+4. 用户反复纠正同类问题时，战略总控 主动合并复现证据并提出更精确的稳定规则候选；重复次数不得替代用户确认。
+5. 项目收尾时，战略总控 先核对交付物、质量门、未解决项和敏感信息，再主动形成带编号、证据、边界和建议去向的候选摘要，询问用户批准全部、指定子集、拒绝或延后。
+6. 用户未回复或未明确批准时，不得写入个人全局记忆。工作偏好进入 `RESEARCH_WORKBENCH.md`，通用踩坑与有效方法进入 `GLOBAL_LESSONS.md`，Skill 缺陷进入 `SKILL_FEEDBACK.md`；公共 Skill 修改保留变更记录并运行与改动相关的回归检查。
 
 
 ## 4. 功能 Skill 自动选择
@@ -64,35 +64,31 @@ Terra 和 Luna 可以指出缺口、冲突和不确定性，但不得替 Sol 做
 
 | 当前需要 | 调用 Skill | 主要模型责任 |
 |---|---|---|
-| 范围、目标、约束或交付物存在高影响歧义 | `../01-requirement-elicitation/SKILL.md` | Sol 主导，用户只回答其独有信息 |
-| 最新资料、论文、标准、网页、文件或数据查证 | `../02-research-reconnaissance/SKILL.md` | Terra 搜集整理，Sol 判断 |
-| 存在真实依赖的多阶段方法、实验、仿真或分析 | `../03-stage-planning-execution/SKILL.md` | Sol 拆解和裁决 |
-| 文献综述、研究现状或证据综合 | `../04-literature-review/SKILL.md` | Terra 建证据底座，Sol 综合 |
-| 论文、报告、提案或研究文本 | `../05-academic-writing/SKILL.md` | Sol 锁定写作包，Luna 起草 |
-| 阶段验收、投稿、关键参数或最终结论 | `../06-quality-gate/SKILL.md` | 工具/Terra 核验，Sol 语义验收 |
-| 本地科研代码的跨文件结构、调用/数据流、复现路径或改动影响 | `../07-code-context/SKILL.md` | Terra 有界检索与定位，Sol 定点验证和判断 |
+| 范围、目标、约束或交付物存在高影响歧义 | `../01-requirement-elicitation/SKILL.md` | 战略总控 主导，用户只回答其独有信息 |
+| 最新资料、论文、标准、网页、文件或数据查证 | `../02-research-reconnaissance/SKILL.md` | 证据 Worker 搜集整理，战略总控 判断 |
+| 存在真实依赖的多阶段方法、实验、仿真或分析 | `../03-stage-planning-execution/SKILL.md` | 战略总控 拆解和裁决 |
+| 文献综述、研究现状或证据综合 | `../04-literature-review/SKILL.md` | 证据 Worker 建证据底座，战略总控 综合 |
+| 论文、报告、提案、研究文本或内容已锁定的单一成品 | `../05-academic-writing/SKILL.md` | 战略总控 锁定输出包，输出 Worker 起草内容与格式规格 |
+| 阶段验收、投稿、关键参数或最终结论 | `../06-quality-gate/SKILL.md` | 工具/证据 Worker 核验，战略总控 语义验收 |
+| 本地科研代码的跨文件结构、调用/数据流、复现路径或改动影响 | `../07-code-context/SKILL.md` | 证据 Worker 有界检索与定位，战略总控 定点验证和判断 |
 
 功能 Skill 完成后必须返回总控。Worker 不得互相转交或递归委派。
 
 ## 5. 可执行委派契约
 
-职责表不是建议清单。当前任务命中以下条件且路由状态为 `ready` 时，Sol 必须实际调用子 Agent：
+委派是成本判断，不是固定步骤。仅在以下条件同时满足时创建 Worker：
 
-- 调用前检查当前 `spawn_agent` 工具实际暴露的参数，不得假设所有 Codex 运行面使用同一调用形态；
-- 若支持 `agent_type`，证据任务从 `runtime_dispatch.support_agent_type` 读取角色，写作任务从 `runtime_dispatch.economy_agent_type` 读取角色，两者都使用 `runtime_dispatch.fork_turns`；角色 TOML 锁定模型和 reasoning，此形态不再传模型覆盖；
-- 若不支持 `agent_type`，但支持 `task_name`、`model`、`reasoning_effort` 和 `fork_turns`，从 `runtime_dispatch.*_agent_type`、`tiers.support`、`tiers.economy` 和 `runtime_dispatch.fork_turns` 组装显式调用；所有值只来自已验证的 `MODEL_ROUTING.json`，不得在 Skill 中手写第二份映射；
-- 显式模型兼容形态没有角色 TOML 的强制只读保障时，任务卡必须写明不编辑文件、`changed_files` 为空、不得委派、不得越过科研判断边界；Sol 对返回结果做同样验收；
-- 若 spawn 工具不能锁定目标模型，但本机 `codex` 可用且模型目录验证通过，允许使用官方一次性适配：命令固定使用 `--disable multi_agent`、`--strict-config`、`--ephemeral`、`--ignore-user-config`、`--json`、`--color never` 和 `--sandbox read-only`；`-m` 与 `model_reasoning_effort` 分别从目标 tier 的 canonical 字段读取。只通过标准输入传递紧凑任务卡，进程完成即退出；这不是常驻 Agent runtime；
-- 三种形态都只发送紧凑任务卡。spawn 形态等待子线程，`codex exec` 形态要求退出码为 0 且返回约定交接包；随后由 Sol 判断、验收并向用户答复。
+- 当前工作是有界证据任务或已经锁定的低判断输出任务；
+- 输入、输出与停止条件可以用紧凑任务卡表达；
+- Worker 不需要当前线程的完整历史；
+- 委派预计能明显节省上下文或时间，或能提供必要的独立只读核对；
+- 路由状态为 `ready`，目标模型与 reasoning 已通过运行时目录验证。
 
-只有下列情况允许 Sol 不创建 Worker：
+满足条件时，优先按 `runtime_dispatch.support_agent_type`、`runtime_dispatch.economy_agent_type` 和 `fork_turns` 使用角色调用；运行面不支持 `agent_type` 时，使用项目已解析的 `tiers.support` 或 `tiers.economy` 显式参数。显式调用必须重申只读、无递归委派和紧凑交接边界。若 spawn 不能锁定目标模型，可使用一次性只读 `codex exec`，固定启用 `--disable multi_agent`、`--ephemeral` 和 `--sandbox read-only`，只传紧凑任务卡并在完成后退出。
 
-- 任务属于第 2 节不可委派的科研判断；
-- 请求简单、低风险、无需检索或文件扫描，并且不是正式多段写作交付；
-- 路由预检明确返回 `degraded_sol_only`；
-- 当前运行面不支持两种 spawn 形态且官方一次性 `codex exec` 也不可用、目标模型不可用，或一次合规调用明确失败；状态使用 `runtime_dispatch.failure_status`。
+短小检索、单页查证、局部改写、直接文件编辑、紧邻当前科学判断的工作，以及委派开销不划算的任务，由战略总控直接完成。战略总控不可委派的责任始终留在主线程。
 
-真实创建的子线程、成功的 spawn 工具结果，或已锁定目标模型/reasoning 且退出码为 0、返回合规交接包的一次性 `codex exec` 才是运行证据。模型在正文中声称“已调用 Terra/Luna”不算证据。调用不可用或失败时，不得伪造 Worker 结果或反复重试；使用 `runtime_dispatch.failure_status` 标记当前任务，由 Sol 完成有界任务，并在最终答复中用一句话透明说明本轮发生了降级。用户仍不需要选择模型。
+真实创建的子线程、成功的 spawn 工具结果，或锁定目标模型且退出码为 0、返回合规交接包的一次性 `codex exec` 才算运行证据。调用不可用或失败时不反复重试；标记 `runtime_dispatch.failure_status`，由战略总控完成当前有界任务并透明说明。
 
 ## 6. 何时形成阶段
 
@@ -120,35 +116,40 @@ stop_conditions: 证据不足、冲突或越界时何时停止
 
 不得传递完整对话、全部项目历史、全部工具日志或整篇论文原文。详细规则见 `../shared/STAGE_HANDOFF.template.md`，返回结构遵循 `../shared/STAGE_HANDOFF.schema.json`。
 
-### Terra 证据包
+### 证据 Worker 证据包
 
-Terra 只返回：
+证据 Worker 只返回：
 
 - 证据表或提取结果；
 - 来源定位和必要元数据；
 - 可直接观察到的事实摘要；
 - 冲突、缺口和不确定项；
-- 建议 Sol 决定的下一动作。
+- 建议 战略总控 决定的下一动作。
 
-### Luna 写作包
+### 输出 Worker 锁定输出包
 
-Sol 交给 Luna 的输入必须已经锁定：
+写作包是锁定输出包的一个子集。战略总控 交给 输出 Worker 的输入必须已经锁定：
 
-- 目标章节或交付物；
-- 提纲和论点顺序；
+- 一个主要交付物，例如一份章节、PDF、Word、Excel 或 PPT 内容包；
+- 内容、字段、顺序、提纲、论点和模板；
 - 可使用的事实、数据、公式和引用编号；
-- 风格、语言、长度和格式；
-- 禁止新增的主张及占位符规则。
+- 风格、语言、长度、版式和格式；
+- 禁止新增的主张、计算、分类、优先级及占位符规则；
+- 可观察的验收条件，以及负责实际落盘、渲染和验证的专用工具。
 
-Luna 可以组织语言和生成完整草稿，但不得新增事实、引用、数值、公式、因果关系或科研判断。
+满足以下全部条件时优先使用 输出 Worker：主要交付物只有一个；内容和决策已锁定；主要工作是改写、排版、制表、摘要化或语言转换；验收条件可确定性检查。文件扩展名本身不是路由依据。
+
+只要任务还需要外部检索或文件事实提取、新计算或公式推导、方法选择、分类排序、优先级裁决、关键解释，或多个相互依赖的成品，就不得提前交给 输出 Worker：证据先由 证据 Worker 整理，判断由 战略总控 完成，锁定后才可交 输出 Worker。
+
+输出 Worker 可以生成完整草稿、结构化表格内容和版式说明，但不得新增事实、引用、数值、公式、计算、分类、优先级、因果关系或科研判断。输出 Worker 保持只读；PDF、Word、Excel、PPT 等文件由对应专用 Skill/工具实际创建、渲染和验证。
 
 ## 8. 质量检查
 
 质量强度是内部决策，不向用户暴露成工作模式：
 
 - L0：语法、Schema、哈希、文件、单位、格式和确定性测试；
-- L1：Terra 对来源定位、字段完整性、证据覆盖、遗漏和冲突做只读核验；
-- L2：Sol 对来源可靠性、方法、参数、解释、过度推断和科学结论做语义验收。
+- L1：证据 Worker 对来源定位、字段完整性、证据覆盖、遗漏和冲突做只读核验；
+- L2：战略总控 对来源可靠性、方法、参数、解释、过度推断和科学结论做语义验收。
 
 投稿/申报、安全或高成本决策、关键参数、核心方法和最终科学结论必须执行 L2。L2 复用已有 L0/L1 摘要和定位，不重新加载全部原始材料，也不重写全文。
 
@@ -168,18 +169,18 @@ Luna 可以组织语言和生成完整草稿，但不得新增事实、引用、
 
 ## 10. Token、成本与时间纪律
 
-- 优先降低 Sol token 和总成本，而不是机械追求原始 token 最少；
+- 优先降低 战略总控 token 和总成本，而不是机械追求原始 token 最少；
 - 按共享协议的上下文获取阶梯先复用定位、提纲和精确片段，证据不足才扩展关系邻域或全文；
 - 对跨轮和跨 Agent 内容维护轻量上下文账本，未变化内容只交付定位或结论编号，变化内容只重验受影响部分；
 - 主动提问与记忆检查点只读取相关状态、复盘和候选定位；默认展示 3–5 条高价值候选，不回放全部历史；
 - 长材料可以可逆省略，但公式、单位、数值、工况、参数、异常和支撑最终结论的关键实现属于科研无损区；
-- Sol 只向 Terra 发送紧凑证据任务卡；Terra 只回证据表、定位和摘要；
-- Sol 只向 Luna 发送锁定写作包；Luna 不接收完整研究历史；
+- 战略总控 只向 证据 Worker 发送紧凑证据任务卡；证据 Worker 只回证据表、定位和摘要；
+- 战略总控 只向 输出 Worker 发送锁定输出包；输出 Worker 不接收完整研究历史；
 - 不为每个小动作重复规划、状态更新或质量报告；
 - 大型结果写入文件，对话只显示结论、定位、未决项和下一动作；
 - 代码密集型任务只在跨文件关系确有价值且外部索引已可用时调用 `07-code-context`；不自动安装或初始化依赖；
-- 图检索结果压缩为代码定位、关系摘要、限制和验证目标，不把完整源码或工具日志传回 Sol；
-- 评价路由时同时记录 Sol token、总成本、有效交付时间和科研质量。
+- 图检索结果压缩为代码定位、关系摘要、限制和验证目标，不把完整源码或工具日志传回 战略总控；
+- 评价路由时同时记录 战略总控 token、总成本、有效交付时间和科研质量。
 
 ## 11. 工具纪律
 
@@ -199,9 +200,9 @@ Luna 可以组织语言和生成完整草稿，但不得新增事实、引用、
 - 要求用户选择模型、Agent 或工作模式；
 - 为功能分类再增加一层 Agent、Reviewer Agent 或独立 Runtime；
 - 把完整对话、全部日志或整篇原文复制给 Worker；
-- 让 Terra 决定来源可靠性、研究路线或最终结论；
-- 让 Luna 在未锁定论点和证据时自由生成科研内容；
-- 只在文字中声称调用了 Worker，却没有真实子线程、成功 spawn，或锁定目标模型且返回合规交接包的一次性 `codex exec`；
+- 让 证据 Worker 决定来源可靠性、研究路线或最终结论；
+- 让 输出 Worker 在内容、字段、论点、证据或决策未锁定时自由生成成品；
+- 只在文字中声称调用了 Worker，却没有真实创建的子线程、成功的 spawn 工具结果，或锁定目标模型且返回合规交接包的一次性 `codex exec`；
 - 对同一交付物重复启动计划和审查；
 - 质量门发现重大问题后仍继续推进。
 - 未经明确批准写入个人全局记忆，或用重复出现次数代替用户授权。

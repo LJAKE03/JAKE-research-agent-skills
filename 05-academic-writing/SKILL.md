@@ -1,6 +1,6 @@
 ---
 name: academic-paper-and-report-writing
-description: Use to plan, draft, revise, or integrate SCI papers, short academic papers, course papers, technical reports, project reports, research summaries, proposals, and other formal research outputs. It must write from approved evidence, data, methods, figures, and claims; work section by section; maintain a claims-to-evidence map and cross-section consistency; avoid invented results or references; and return each substantial section to the orchestrator and quality gate before continuing.
+description: Use to plan, draft, revise, or integrate SCI papers, short academic papers, course papers, technical reports, project reports, research summaries, proposals, and other formal research outputs. Write from approved evidence, data, methods, figures, and claims; maintain a claims-to-evidence map and cross-section consistency; avoid invented results or references; and apply quality gates only at meaningful risk or dependency boundaries.
 ---
 
 # SCI 论文与技术报告写作
@@ -32,13 +32,19 @@ description: Use to plan, draft, revise, or integrate SCI papers, short academic
 
 ## 3. 执行身份与委派
 
-- 如果当前 Agent 是 `research_output`，只根据收到的锁定写作包起草并返回 `writing_draft`，不得新增科研事实或判断，也不得创建 Worker。
-- 如果当前 Agent 是 Sol，先检查并锁定目标、提纲、论点顺序、允许事实/数据/公式/引用、语言、长度、格式、禁止新增项、验收和停止条件。
-- 写作包完整且目标是正式章节、多个段落、表格、语言版本、格式化文本或可直接替换成稿时，必须创建专用 Worker；Sol 不得为节省一次调用而自己重写整段交付物。
-- 当前工具支持 `agent_type` 时，从 `runtime_dispatch.economy_agent_type` 与 `runtime_dispatch.fork_turns` 组装调用；不支持 `agent_type` 但支持显式模型参数时，再从 `tiers.economy.model` 和 `tiers.economy.reasoning_effort` 补齐参数，并在锁定写作包中重申只读、无递归委派和禁止新增事实。
-- 两种 spawn 形态都不能锁定 Luna 时，若 `codex` 和经验证的 economy 模型可用，则以 `--disable multi_agent`、`--ephemeral`、`--sandbox read-only` 及 canonical economy tier 的模型和 reasoning 启动一次性 `codex exec`，只传锁定写作包并要求 `writing_draft`。
-- 只有单句、短标签、标题候选或少量局部措辞调整可以由 Sol 直接完成。
-- 只有三种调用形态都不可用、目标模型不可用或一次合规调用明确失败时，才返回 `runtime_dispatch.failure_status` 后由 Sol 完成当前有界写作，不得声称已经调用 Luna。
+- 如果当前 Agent 是 `research_output`，只根据收到的锁定输出包起草并返回 `writing_draft`，不得新增科研事实或判断，也不得创建 Worker。
+- 如果当前 Agent 是 战略总控，先检查并锁定目标、提纲、论点顺序、允许事实/数据/公式/引用、语言、长度、格式、禁止新增项、验收和停止条件。
+- 输出包完整且剩余工作是可独立分离的低判断写作、制表或格式组织，并且工作量足以抵消委派开销时，可创建专用 Worker。短篇改写、局部润色和直接文件编辑由战略总控完成。
+- 当前工具支持 `agent_type` 时，从 `runtime_dispatch.economy_agent_type` 与 `runtime_dispatch.fork_turns` 组装调用；不支持 `agent_type` 但支持显式模型参数时，再从 `tiers.economy.model` 和 `tiers.economy.reasoning_effort` 补齐参数，并在锁定输出包中重申只读、无递归委派和禁止新增事实。
+- 两种 spawn 形态都不能锁定 输出 Worker 时，若 `codex` 和经验证的 economy 模型可用，则以 `--disable multi_agent`、`--ephemeral`、`--sandbox read-only` 及 canonical economy tier 的模型和 reasoning 启动一次性 `codex exec`，只传锁定输出包并要求 `writing_draft`。
+- 单句、短标签、标题候选、少量局部措辞调整和其他低开销编辑可由战略总控直接完成。
+- 只有三种调用形态都不可用、目标模型不可用或一次合规调用明确失败时，才返回 `runtime_dispatch.failure_status` 后由 战略总控 完成当前有界写作，不得声称已经调用 输出 Worker。
+
+### 3.1 低判断单一成品
+
+当主要交付物只有一个，内容、字段、顺序、模板和决策已经锁定，且剩余工作只是改写、排版、制表、摘要化或语言转换时，优先由 输出 Worker 生成内容与格式规格。这包括已锁定内容的 PDF、Word、Excel 或 PPT 输出包。
+
+文件后缀不等于低判断。仍需检索或提取事实、推导公式或计算、选择方法、分类排序、确定优先级、解释关键结果，或协调多个依赖成品时，先返回 证据 Worker/战略总控 完成证据和判断。输出 Worker 保持只读，不直接编辑文件；对应文档、表格、PDF 或演示文稿 Skill/工具负责实际写入、渲染和验证。
 
 ## 4. 先建立论点—证据图
 
@@ -51,7 +57,7 @@ description: Use to plan, draft, revise, or integrate SCI papers, short academic
 
 仅当交付物是期刊论文、会议论文、正式投稿材料，或需要声明创新性和最终科学结论时启用。内部周报、一般过程报告和不含正式科学主张的文本不强制增加治理。
 
-实质写作前，由 Sol 从 `../shared/PUBLICATION_CLAIM_TRACEABILITY.template.md` 建立项目合同，并完成：
+实质写作前，由 战略总控 从 `../shared/PUBLICATION_CLAIM_TRACEABILITY.template.md` 建立项目合同，并完成：
 
 1. 锁定全文核心命题，以及每项可检验贡献相对已有工作的差异；
 2. 区分证明贡献所需、当前已有和仍然缺失的证据，并保留精确定位；
@@ -60,7 +66,7 @@ description: Use to plan, draft, revise, or integrate SCI papers, short academic
 5. 在 Results 或 Discussion 写作前，让每个主要结果单元映射到贡献 ID、证据位置、工况 / 样本 / 单位 / 不确定性及允许解释；
 6. 投稿前复用质量门发现填写审稿风险，不新增常驻 Reviewer Agent。
 
-合同未确认时，不把实质性投稿写作交给 Luna。缺失证据会改变贡献是否成立时，返回研究或分析；可以通过降低声明强度解决时，记录降级依据后重新确认。命题、证据或边界变化时，只让受影响章节退回最早必要位置，未变化内容继续复用。
+合同未确认时，不把实质性投稿写作交给 输出 Worker。缺失证据会改变贡献是否成立时，返回研究或分析；可以通过降低声明强度解决时，记录降级依据后重新确认。命题、证据或边界变化时，只让受影响章节退回最早必要位置，未变化内容继续复用。
 
 ## 5. 分段写作，不一次写完整稿
 
@@ -75,7 +81,7 @@ description: Use to plan, draft, revise, or integrate SCI papers, short academic
 7. 摘要、关键词、题目；
 8. 全文一致性检查。
 
-每完成一个主要章节，返回总控进入质量门。
+在证据、方法、核心论点或跨章节一致性发生高影响变化时返回总控进入质量门；低风险且已锁定的相邻章节可连续推进。
 
 ## 6. SCI 小论文结构
 
@@ -161,7 +167,7 @@ description: Use to plan, draft, revise, or integrate SCI papers, short academic
 - 不泄露“根据用户文件拼接”“从大论文摘取”等过程性表达；
 - 不为增加篇幅重复同一观点；
 - 用户要求可直接替换文本时，提供完整、连贯、可粘贴版本。
-- 路由或工作流说明中不得写成由用户显式选择模型、Agent 或模式；若草稿出现此类表述，Sol 紧凑验收必须判为 `REVISE`。
+- 路由或工作流说明中不得写成由用户显式选择模型、Agent 或模式；若草稿出现此类表述，战略总控 紧凑验收必须判为 `REVISE`。
 
 ## 10. 章节交接
 

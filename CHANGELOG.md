@@ -6,6 +6,8 @@
 
 ### Added
 
+- 新增项目级模型选择 overlay、选择 Schema、交互式配置脚本和可双击入口；战略总控可选 Astra/Sol，两个 Worker 可选 Sol/Terra/Luna。
+- 新增 4 个 Luna 单一成品路由回归：已锁定考公选调 PDF、固定模板 Excel、未锁定资格判断和工程计算 PDF；统一工作流行为评测总数增至 32。
 - 新增投稿级 PUBLICATION_CLAIM_TRACEABILITY 合同模板和对应行为评测，追溯核心命题、贡献、证据缺口、结果映射、审稿风险与受影响重验位置。
 - 新增 `shared/PROACTIVE_INQUIRY_AND_MEMORY_PROTOCOL.md`，统一“先查后问”、高影响聚焦提问、A/B/C/D 分级经验精度和项目收尾主动记忆检查点。
 - 新增候选集 ID、摘要指纹与 `awaiting_user` 授权状态，支持批准全部、指定子集、拒绝或延后，并防止同一候选集重复追问。
@@ -27,6 +29,10 @@
 - 新增科研代码上下文胶囊与正向、无依赖回退、单文件近失配评测，避免把完整图检索输出传回总控。
 
 ### Changed
+
+- 路由配置升级为 1.7.0：默认保留 Sol/xhigh、Terra/medium、Luna/low；允许角色共用模型；委派、质量门和用户确认改为按任务收益与风险触发。
+- Luna 从“锁定科研写作包”扩展为“锁定输出包”：单一成品的内容、字段、顺序、模板和决策已锁定且只剩改写、排版、制表、摘要化或语言转换时优先使用；PDF/Word/Excel/PPT 仍由专用工具实际写入和验证。
+- 明确文件后缀不是路由依据；检索与事实提取仍由 Terra，计算、方法、分类、优先级和关键判断仍由 Sol。
 
 - 学术写作与质量门增加投稿论断追溯闭环；未确认合同不进入实质写作，主要结果必须映射贡献与证据条件，未关闭的重大科学异议会阻断可投稿结论。
 - 总控、需求澄清、项目规则和启动提示统一要求：先检查本地上下文，再调研权威公开事实，最后只问用户独有且会改变路线的关键信息。
@@ -81,8 +87,8 @@
 
 - `shared/MODEL_ROUTING.json` 升级为唯一 canonical JSON，项目模板保留字节一致快照并记录 SHA256。
 - 默认改为平衡快速模式，首轮最多询问 2 个阻断问题；质量门分为 L0/L1/L2。
-- 运行时验证 Sol/Terra/Luna 的 model slug 与 reasoning；Sol 或模型目录不可验证时 fail-closed，只有 Terra/Luna 缺失时进入 `degraded_sol_only`。
-- 路由冲突写入 `blocked_conflict` 并返回非零；启动器仅接受哈希一致的 `ready`，或 Sol 已验证的 `degraded_sol_only`。离线静态检查必须显式使用 `-AllowUnverifiedModelCatalog`。
+- 运行时验证 Sol/Terra/Luna 的 model slug 与 reasoning；Sol 或模型目录不可验证时 fail-closed，只有 Terra/Luna 缺失时进入 `degraded_strategic_only`。
+- 路由冲突写入 `blocked_conflict` 并返回非零；启动器仅接受哈希一致的 `ready`，或 Sol 已验证的 `degraded_strategic_only`。离线静态检查必须显式使用 `-AllowUnverifiedModelCatalog`。
 
 ### Fixed
 

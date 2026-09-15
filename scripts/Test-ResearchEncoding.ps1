@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Validates UTF-8 source files and PowerShell text I/O discipline.
 #>
@@ -71,16 +71,20 @@ $orchestratorText = Get-Content -Raw -Encoding UTF8 -LiteralPath $orchestratorPa
 $expectedHeading = Decode-Utf8Base64 '56eR56CU6aG555uu5oC75o6n5LiO57uf5LiA5bel5L2c5rWB'
 if ($orchestratorText -notmatch [regex]::Escape($expectedHeading)) { Add-Failure 'Chinese UTF-8 source read produced unexpected text' }
 
+$expectedLaunchers = @('启动科研Agent.cmd','配置科研模型.cmd')
 $launcherFiles = @(Get-ChildItem -LiteralPath $SourceRoot -Filter '*.cmd' -File)
-if ($launcherFiles.Count -ne 1) { Add-Failure "expected one CMD launcher; found $($launcherFiles.Count)" }
-else {
-  $launcherBytes = [IO.File]::ReadAllBytes($launcherFiles[0].FullName)
-  $launcherText = Get-Content -Raw -Encoding UTF8 -LiteralPath $launcherFiles[0].FullName
+$launcherNames = @($launcherFiles.Name)
+if (@(Compare-Object -ReferenceObject $expectedLaunchers -DifferenceObject $launcherNames).Count -ne 0) { Add-Failure "CMD launchers mismatch; found $($launcherNames -join ',')" }
+$chcpCount = 0
+foreach($launcherFile in $launcherFiles) {
+  $launcherBytes = [IO.File]::ReadAllBytes($launcherFile.FullName)
+  $launcherText = Get-Content -Raw -Encoding UTF8 -LiteralPath $launcherFile.FullName
   $launcherHasBom = $launcherBytes.Length -ge 3 -and $launcherBytes[0] -eq 0xEF -and $launcherBytes[1] -eq 0xBB -and $launcherBytes[2] -eq 0xBF
-  if ($launcherHasBom) { Add-Failure 'CMD launcher must remain UTF-8 without BOM' }
-  if ($launcherText -match '(?<!\r)\n') { Add-Failure 'CMD launcher must use CRLF line endings' }
-  $chcpCount = [regex]::Matches($launcherText, '(?im)^\s*chcp\s+65001\b').Count
-  if ($chcpCount -ne 1) { Add-Failure "CMD launcher must set code page once; found $chcpCount" }
+  if ($launcherHasBom) { Add-Failure "$($launcherFile.Name) must remain UTF-8 without BOM" }
+  if ($launcherText -match '(?<!\r)\n') { Add-Failure "$($launcherFile.Name) must use CRLF line endings" }
+  $fileChcpCount = [regex]::Matches($launcherText, '(?im)^\s*chcp\s+65001\b').Count
+  $chcpCount += $fileChcpCount
+  if ($fileChcpCount -ne 1) { Add-Failure "$($launcherFile.Name) must set code page once; found $fileChcpCount" }
 }
 
 $tempParent = Join-Path ([IO.Path]::GetTempPath()) 'research-agent-encoding-tests'

@@ -65,8 +65,8 @@ if (Test-Path -LiteralPath $routingJsonPath) {
     Test-Value ([bool]$routing.runtime_dispatch.require_runtime_evidence) $true 'routing JSON requires runtime evidence'
     Test-Value ([bool]$routing.runtime_dispatch.require_spawn_evidence) $true 'routing JSON requires spawn evidence'
     Test-Value ([bool]$routing.runtime_dispatch.self_report_is_evidence) $false 'routing JSON rejects self-report evidence'
-    Test-Value ([string]$routing.runtime_dispatch.failure_status) 'degraded_sol_only' 'routing JSON dispatch failure status'
-    Test-Value (@($routing.workflow.sol_semantic_acceptance_when)-join ',') 'publication_or_submission,key_parameter_or_core_method,safety_or_high_cost_decision,scientific_final_acceptance' 'routing JSON Sol acceptance triggers'
+    Test-Value ([string]$routing.runtime_dispatch.failure_status) 'degraded_strategic_only' 'routing JSON dispatch failure status'
+    Test-Value (@($routing.workflow.strategic_semantic_acceptance_when)-join ',') 'publication_or_submission,key_parameter_or_core_method,safety_or_high_cost_decision,scientific_final_acceptance' 'routing JSON Sol acceptance triggers'
   }
   catch { Add-Result FAIL 'routing JSON parse' $_.Exception.Message }
 } else { Add-Result FAIL 'routing JSON' 'missing' }
@@ -142,13 +142,28 @@ foreach($field in @('objective','input_locators','locked_decisions','output_cont
 $routingMarkdownPath = Join-Path $SourceRoot 'shared\MODEL_ROUTING.md'
 if (Test-Path -LiteralPath $routingMarkdownPath) {
   $routingMarkdown = Get-Content -Raw -Encoding UTF8 -LiteralPath $routingMarkdownPath
-  foreach($tier in @('strategic','support','economy')) {
-    Test-Text $routingMarkdown ([regex]::Escape('tiers.' + $tier + '.*')) ('routing Markdown ' + $tier + ' canonical key')
+  foreach($role in @('strategic','research_support','research_output')) {
+    Test-Text $routingMarkdown ([regex]::Escape($role)) ('routing Markdown role ' + $role)
   }
-  Test-Text $routingMarkdown 'delegation' 'routing Markdown canonical agent limits'
-  Test-NoText $routingMarkdown 'gpt-5\.6-(sol|terra|luna)' 'routing Markdown has no duplicated model mapping'
-  Test-NoText $routingMarkdown '\u4EC5 Sol|\u5C1A\u672A\u521B\u5EFA agents|no Terra or Luna' 'routing Markdown stale state'
+  Test-Text $routingMarkdown 'MODEL_ROUTING\.selection\.json' 'routing Markdown project selection'
+  Test-Text $routingMarkdown 'gpt-6-astra' 'routing Markdown Astra option'
+  Test-Text $routingMarkdown '允许多个角色使用同一模型' 'routing Markdown same-model reuse'
 } else { Add-Result FAIL 'routing Markdown' 'missing' }
+
+$selectionSchemaPath = Join-Path $SourceRoot 'shared\MODEL_ROUTING.selection.schema.json'
+$selectionTemplatePath = Join-Path $SourceRoot 'project-template\.research-agent\MODEL_ROUTING.selection.json'
+$selectorPath = Join-Path $SourceRoot 'scripts\Set-ResearchModels.ps1'
+foreach($requiredPath in @($selectionSchemaPath,$selectionTemplatePath,$selectorPath)) {
+  Add-Result $(if(Test-Path -LiteralPath $requiredPath -PathType Leaf){'PASS'}else{'FAIL'}) 'model selection artifact exists' $requiredPath
+}
+$selectionSchema = Get-Content -Raw -Encoding UTF8 -LiteralPath $selectionSchemaPath
+$selectionTemplate = Get-Content -Raw -Encoding UTF8 -LiteralPath $selectionTemplatePath | ConvertFrom-Json
+$selectorText = Get-Content -Raw -Encoding UTF8 -LiteralPath $selectorPath
+Test-Text $selectionSchema 'gpt-6-astra' 'selection schema Astra controller'
+Test-Text $selectionSchema 'gpt-5\.6-(sol|terra|luna)' 'selection schema Worker choices'
+Test-Value ([string]$selectionTemplate.tiers.strategic.model) 'gpt-5.6-sol' 'selection default controller'
+Test-Text $selectorText 'MODEL_SELECTION_SAVED' 'selection script completion marker'
+Test-Text $selectorText 'cnotin.*modelsByTier' 'selection script validates tier choices'
 
 $cliTemplatePath = Join-Path $SourceRoot 'config\research.config.toml.template'
 if (Test-Path -LiteralPath $cliTemplatePath) {
@@ -195,7 +210,7 @@ if (Test-Path -LiteralPath $managedRoutingPath) {
 
 $templateAgentsPath = Join-Path $SourceRoot 'project-template\AGENTS.md'
 $templateAgentsText = Get-Content -Raw -Encoding UTF8 -LiteralPath $templateAgentsPath
-foreach($token in @('research-agent-routing:start','research-agent-routing:end','Sol','Terra','Luna','PowerShell','Python','`rg`','`git diff`','Get-Content -Encoding UTF8','紧凑交接 Schema')) { Test-Text $templateAgentsText ([regex]::Escape($token)) "template AGENTS $token" }
+foreach($token in @('research-agent-routing:start','research-agent-routing:end','战略总控','证据 Worker','输出 Worker','PowerShell','Python','`rg`','`git diff`','Get-Content -Encoding UTF8','紧凑交接 Schema')) { Test-Text $templateAgentsText ([regex]::Escape($token)) "template AGENTS $token" }
 foreach($relativeStatePath in @('project-template\PROJECT_STATE.md','shared\PROJECT_STATE.template.md')) {
   $stateTemplateText = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot $relativeStatePath)
   Test-Text $stateTemplateText '统一科研流程' "$relativeStatePath unified workflow"
@@ -263,8 +278,11 @@ foreach($agentName in @('research-support','research-output')) {
     Test-Text $text 'Do not edit files' 'support edit boundary'
   }
   else {
-    Test-Text $text 'locked writing package' 'output locked-package boundary'
+    Test-Text $text 'locked output package' 'output locked-package boundary'
     Test-Text $text 'Generate coherent prose' 'output drafting responsibility'
+    Test-Text $text 'PDF, Word, Excel, or PowerPoint|PDF, Word, Excel or PowerPoint' 'output artifact coverage'
+    Test-Text $text 'specialized artifact tool.*(write|写).*verify|specialized artifact tool must perform the actual file write' 'output specialized-tool boundary'
+    Test-Text $text '(?s)calculation, classification.*priority' 'output no-new-decision boundary'
     Test-Text $text 'Never introduce a new fact' 'output no-new-facts boundary'
     Test-Text $text 'Do not edit files' 'output edit boundary'
   }
@@ -272,10 +290,12 @@ foreach($agentName in @('research-support','research-output')) {
 
 $orchestrator=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '00-research-orchestrator\SKILL.md')
 Test-Text $orchestrator '一条连续科研流程' 'single research workflow'
-Test-Text $orchestrator 'Sol 理解需求.*选择方法' 'Sol strategic responsibility'
-Test-Text $orchestrator 'Terra.*检索、查证、扫描、提取和证据表' 'Terra evidence responsibility'
-Test-Text $orchestrator 'Luna.*锁定写作包.*生成文本' 'Luna drafting responsibility'
-Test-Text $orchestrator '用户不需要选择模型、Agent 或工作模式' 'automatic user-facing routing'
+Test-Text $orchestrator '战略总控\s+理解需求.*选择方法' 'strategic controller responsibility'
+Test-Text $orchestrator '证据 Worker.*检索、查证、扫描、提取和证据表' 'support worker responsibility'
+Test-Text $orchestrator '输出 Worker.*锁定输出包.*单一成品.*低判断' 'output worker responsibility'
+Test-Text $orchestrator '文件扩展名本身不是路由依据' 'Luna extension is not routing criterion'
+Test-Text $orchestrator 'PDF、Word、Excel、PPT.*专用 Skill/工具.*创建、渲染和验证' 'Luna specialized artifact handoff'
+Test-Text $orchestrator 'MODEL_ROUTING\.selection\.json' 'project-level model selection'
 Test-Text $orchestrator 'PowerShell' 'PowerShell boundary'
 Test-Text $orchestrator 'Python' 'Python boundary'
 Test-Text $orchestrator '`rg`/`rg --files`' 'native search boundary'
@@ -331,12 +351,15 @@ Test-Text $academicWriting '不得写成由用户显式选择模型、Agent 或�
 Test-Text $academicWriting 'CONTEXT_EFFICIENCY_PROTOCOL\.md' 'academic writing context efficiency reference'
 Test-Text $academicWriting 'PUBLICATION_CLAIM_TRACEABILITY\.template\.md' 'academic writing publication traceability reference'
 Test-Text $academicWriting '投稿级论断追溯合同' 'academic writing contribution gate'
-Test-Text $academicWriting '合同未确认时.*不把实质性投稿写作交给 Luna' 'academic writing blocks unlocked publication drafting'
+Test-Text $academicWriting '合同未确认时.*不把实质性投稿写作交给 输出 Worker' 'academic writing blocks unlocked publication drafting'
+Test-Text $academicWriting '低判断单一成品' 'academic writing single-output route'
+Test-Text $academicWriting 'PDF、Word、Excel 或 PPT' 'academic writing artifact coverage'
+Test-Text $academicWriting '文件后缀不等于低判断' 'academic writing rejects extension-only route'
 foreach($field in @('objective','input_locators','locked_decisions','output_contract','acceptance_checks','stop_conditions')) { Test-Text $orchestrator ([regex]::Escape($field)) "orchestrator task-card $field" }
 Test-NoText $orchestrator '\bFast\b|\bStandard\b|\bStrict\b(?!-)|\bExploratory\b|\bDirect\b|\bFocused\b|Open Research|CAPABILITY_MANIFEST|RUNTIME_POLICY|Write-ResearchRuntimeEvent' 'no public lanes or runtime framework'
 $qualityGate=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $SourceRoot '06-quality-gate\SKILL.md')
 foreach($gate in @('L0','L1','L2')) { Test-Text $qualityGate ([regex]::Escape($gate)) "quality gate $gate" }
-Test-Text $qualityGate 'Sol 只做一次紧凑语义验收' 'compact Sol acceptance'
+Test-Text $qualityGate '战略总控\s+只做一次紧凑语义验收' 'compact strategic acceptance'
 Test-Text $qualityGate '不新增独立 Reviewer Agent' 'quality gate no extra reviewer'
 Test-Text $qualityGate 'CONTEXT_EFFICIENCY_PROTOCOL\.md' 'quality gate context efficiency reference'
 Test-Text $qualityGate '投稿级论断追溯预检' 'quality gate publication preflight'
@@ -364,7 +387,7 @@ Test-Value ([bool]$evals.runtime_assertions.require_canonical_dispatch) $true 'e
 Test-Value ([bool]$evals.runtime_assertions.require_runtime_evidence) $true 'eval requires runtime evidence'
 Test-Value ([bool]$evals.runtime_assertions.require_spawn_evidence) $true 'eval requires spawn evidence'
 Test-Value ([bool]$evals.runtime_assertions.self_report_is_evidence) $false 'eval rejects self-report evidence'
-Test-Value (@($evals.evals).Count) 28 'unified workflow eval count'
+Test-Value (@($evals.evals).Count) 32 'unified workflow eval count'
 Test-Text $suiteIndex '一条统一科研流程' 'suite index unified workflow'
 Test-Text $routingExamples '同一流程' 'routing examples unified workflow'
 Test-NoText ($suiteIndex + $routingExamples) '\bFast\b|\bStandard\b|\bStrict\b(?!-)|\bExploratory\b|\bDirect\b|\bFocused\b|Open Research' 'index and examples have no public modes'
@@ -397,7 +420,7 @@ if($null -eq $gitCommand -or -not(Test-Path -LiteralPath (Join-Path $SourceRoot 
   Add-Result $(if($LASTEXITCODE -eq 0 -and $trackedSettings.Count -eq 0){'PASS'}else{'FAIL'}) 'runtime launcher settings untracked' 'git ls-files must return no runtime settings file'
 }
 Test-Text $launcherText '一条统一科研流程' 'launcher unified workflow'
-Test-Text $launcherText '(?s)Sol.*Terra.*Luna' 'launcher automatic model responsibilities'
+Test-Text $launcherText '(?s)战略总控.*support_agent_type.*economy_agent_type' 'launcher configurable role responsibilities'
 Test-Text $launcherText 'Worker 不互相转交' 'launcher single-hop boundary'
 Test-Text $launcherText '\$routing\.runtime_dispatch' 'launcher loads canonical dispatch'
 Test-Text $launcherText '\$routing\.tiers\.support' 'launcher loads canonical support tier'
@@ -405,7 +428,7 @@ Test-Text $launcherText '\$routing\.tiers\.economy' 'launcher loads canonical ec
 Test-Text $launcherText '\$dispatch\.support_agent_type' 'launcher derives support agent type'
 Test-Text $launcherText '\$dispatch\.economy_agent_type' 'launcher derives economy agent type'
 Test-Text $launcherText 'codex --disable multi_agent exec --strict-config --ephemeral --ignore-user-config --json --color never --sandbox read-only' 'launcher isolated Codex instruction'
-Test-Text $launcherText '用 -m 和 model_reasoning_effort 锁定 Terra/Luna' 'launcher isolated model lock'
+Test-Text $launcherText '用 -m 和 model_reasoning_effort 锁定所选 Worker 模型' 'launcher isolated model lock'
 Test-Text $launcherText '真实子线程、成功 spawn.*退出码为 0' 'launcher runtime evidence rule'
 Test-NoText $launcherText '\bFast\b|\bStandard\b|\bStrict\b(?!-)|\bExploratory\b|\bDirect\b|\bFocused\b|Open Research|CAPABILITY_MANIFEST|RUNTIME_POLICY' 'launcher has no public modes or runtime framework'
 $routingLiteralConsumers=@(

@@ -1,6 +1,6 @@
 ---
 name: staged-research-planning-and-execution
-description: Use only when a research task has genuine dependencies that cannot be completed safely as one bounded delivery. Sol creates the smallest useful sequence of work packages, activates one core package at a time, sends compact task cards instead of project history, updates state only when persistence matters, and returns every result to the orchestrator for verification and the next decision.
+description: Use only when a research task has genuine dependencies that cannot be completed safely as one bounded delivery. 战略总控 creates the smallest useful sequence of work packages, activates one core package at a time, sends compact task cards instead of project history, updates state only when persistence matters, and returns every result to the orchestrator for verification and the next decision.
 ---
 
 # 真实依赖驱动的阶段计划与执行
@@ -19,7 +19,7 @@ description: Use only when a research task has genuine dependencies that cannot 
 
 单一输出、一次查证、简单文件修改或已锁定内容的写作不创建阶段计划。
 
-## 2. Sol 的拆解原则
+## 2. 战略总控 的拆解原则
 
 - 只按真实依赖拆分，不设置默认阶段数；
 - 每个阶段回答一个核心问题并产生一个可验收主交付物；
@@ -39,7 +39,7 @@ description: Use only when a research task has genuine dependencies that cannot 
 
 ## 4. 活动任务卡
 
-Sol 向功能 Skill、Terra 或 Luna 发送以下紧凑任务卡：
+战略总控 向功能 Skill、证据 Worker 或 输出 Worker 发送以下紧凑任务卡：
 
 ```text
 objective: 当前唯一目标

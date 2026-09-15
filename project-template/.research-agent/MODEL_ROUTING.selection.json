@@ -1,0 +1,17 @@
+{
+    "schema_version":  1,
+    "tiers":  {
+                  "strategic":  {
+                                    "model":  "gpt-5.6-sol",
+                                    "reasoning_effort":  "xhigh"
+                                },
+                  "support":  {
+                                  "model":  "gpt-5.6-terra",
+                                  "reasoning_effort":  "medium"
+                              },
+                  "economy":  {
+                                  "model":  "gpt-5.6-luna",
+                                  "reasoning_effort":  "low"
+                              }
+              }
+}

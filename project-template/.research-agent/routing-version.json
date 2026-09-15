@@ -1,10 +1,25 @@
 {
     "status":  "pending",
-    "configuration_version":  "1.5.0",
-    "model_mapping_version":  "sol-terra-luna-unified-v5",
-    "template_version":  "research-routing-v5",
+    "configuration_version":  "1.7.0",
+    "model_mapping_version":  "configurable-controller-workers-v6",
+    "template_version":  "research-routing-v6",
     "canonical_sha256":  null,
     "snapshot_sha256":  null,
+    "selection_sha256":  null,
+    "resolved_tiers":  {
+                           "strategic":  {
+                                             "model":  "gpt-5.6-sol",
+                                             "reasoning_effort":  "xhigh"
+                                         },
+                           "support":  {
+                                           "model":  "gpt-5.6-terra",
+                                           "reasoning_effort":  "medium"
+                                       },
+                           "economy":  {
+                                           "model":  "gpt-5.6-luna",
+                                           "reasoning_effort":  "low"
+                                       }
+                       },
     "schema_version":  2,
     "conflict_count":  0,
     "catalog":  {

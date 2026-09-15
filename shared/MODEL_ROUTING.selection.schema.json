@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Research Agent Project Model Selection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "tiers"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "tiers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["strategic", "support", "economy"],
+      "properties": {
+        "strategic": {"$ref": "#/$defs/strategic"},
+        "support": {"$ref": "#/$defs/worker"},
+        "economy": {"$ref": "#/$defs/worker"}
+      }
+    }
+  },
+  "$defs": {
+    "effort": {"enum": ["low", "medium", "high", "xhigh", "max", "ultra"]},
+    "strategic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model", "reasoning_effort"],
+      "properties": {
+        "model": {"enum": ["gpt-5.6-sol", "gpt-6-astra"]},
+        "reasoning_effort": {"$ref": "#/$defs/effort"}
+      }
+    },
+    "worker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model", "reasoning_effort"],
+      "properties": {
+        "model": {"enum": ["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"]},
+        "reasoning_effort": {"$ref": "#/$defs/effort"}
+      }
+    }
+  }
+}
