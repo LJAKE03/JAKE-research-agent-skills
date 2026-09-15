@@ -1,6 +1,6 @@
 # COMPACT RESEARCH TASK CARD AND HANDOFF
 
-## Sol → Worker task card
+## 战略总控 → Worker task card
 
 只发送完成当前任务所需的最小上下文：
 
@@ -15,15 +15,15 @@
 
 多来源、多文件、长日志或跨阶段任务同时遵循 `CONTEXT_EFFICIENCY_PROTOCOL.md`。先复用新鲜定位，只补充当前缺口；摘要必须可恢复，科研无损区必须保留精确值、条件和来源。
 
-### Terra 任务卡
+### 证据 Worker 任务卡
 
-限定检索范围、资料类型、字段、来源要求和停止条件。Terra 返回证据表、定位、缺口和可观察摘要，不做可靠性裁决或科学综合。
+限定检索范围、资料类型、字段、来源要求和停止条件。证据 Worker 返回证据表、定位、缺口和可观察摘要，不做可靠性裁决或科学综合。
 
-### Luna 写作包
+### 输出 Worker 锁定输出包
 
 必须包含锁定的目标、提纲、论点顺序、可用事实/数据/公式/引用编号、风格、语言、长度、格式、禁止新增项和占位符规则。
 
-## Worker → Sol handoff
+## Worker → 战略总控 handoff
 
 按 `STAGE_HANDOFF.schema.json` 返回：
 
@@ -33,9 +33,9 @@
 - `summary`：最多 8 条结论摘要；
 - `deliverable`：证据表、提取结果、草稿或验证结果；
 - `evidence_locations`：来源或文件定位；
-- `uncertainties`：缺口、冲突和待 Sol 决定事项；
+- `uncertainties`：缺口、冲突和待 战略总控 决定事项；
 - `changed_files`：`evidence_pack`、`writing_draft` 和 `verification_result` 属于只读交接，必须为空；Schema 会拒绝非空值；
-- `next_action`：返回 Sol 后的唯一建议动作。
+- `next_action`：返回 战略总控 后的唯一建议动作。
 
 需要记录重复交付或省略风险时，在现有 `deliverable` 文本内部附加共享协议定义的 Context Receipt；不得给 JSON handoff 增加 Schema 未允许的顶层字段。
 

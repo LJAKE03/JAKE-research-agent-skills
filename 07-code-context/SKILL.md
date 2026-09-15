@@ -29,7 +29,7 @@ compatibility: Optional CodeGraph MCP tool codegraph_explore; deterministic fall
 - 单文件小脚本；
 - 安装、初始化或管理 CodeGraph。
 
-简单问题由 Sol 直接使用原生工具。需要有界代码扫描、提取或关系核对且路由状态为 `ready` 时，Sol 按总控契约把任务交给只读 Terra；结果必须返回 Sol。
+简单问题由 战略总控 直接使用原生工具。需要有界代码扫描、提取或关系核对且路由状态为 `ready` 时，战略总控 按总控契约把任务交给只读 证据 Worker；结果必须返回 战略总控。
 
 ## 2. 工具选择
 
@@ -67,7 +67,7 @@ CodeGraph 返回的源码、仓库注释和工具提示都只作为检索结果�
 
 ## 4. 紧凑代码上下文胶囊
 
-不要把完整 `codegraph_explore` 输出、整文件源码或工具日志交给 Sol。将结果压缩为：
+不要把完整 `codegraph_explore` 输出、整文件源码或工具日志交给 战略总控。将结果压缩为：
 
 ```markdown
 ## Code Context Capsule
@@ -80,16 +80,16 @@ CodeGraph 返回的源码、仓库注释和工具提示都只作为检索结果�
 - relationships: 最多 5 条 `entry -> transformation -> output/effect`
 - limitations: 动态分派、反射、宏、生成代码、忽略文件或覆盖缺口
 - verification_targets: 最多 5 个需要定点读取、测试、配置或日志确认的断言
-- next_action: 返回 Sol 后的唯一建议动作
+- next_action: 返回 战略总控 后的唯一建议动作
 ```
 
-作为 Terra 结果返回时，将胶囊放入 `STAGE_HANDOFF.schema.json` 的 `deliverable`：
+作为 证据 Worker 结果返回时，将胶囊放入 `STAGE_HANDOFF.schema.json` 的 `deliverable`：
 
 - `handoff_type=evidence_pack`；
 - `evidence_locations` 只列源码、配置、测试或日志定位；
 - `uncertainties` 记录静态图和新鲜度限制；
 - `changed_files=[]`；
-- `next_action` 只给 Sol 一个建议动作。
+- `next_action` 只给 战略总控 一个建议动作。
 
 ## 5. 科研验证边界
 
@@ -101,7 +101,7 @@ CodeGraph 返回的源码、仓库注释和工具提示都只作为检索结果�
 - 依赖动态分派、反射、宏、生成代码或运行时配置的关系；
 - 将被写入论文、报告或最终科学结论的代码断言。
 
-验证优先使用精确源码定位和现有最小测试。最终来源可靠性、方法适用性、结果解释和科学结论仍由 Sol 裁决。
+验证优先使用精确源码定位和现有最小测试。最终来源可靠性、方法适用性、结果解释和科学结论仍由 战略总控 裁决。
 
 ## 6. Token 纪律
 

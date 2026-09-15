@@ -260,6 +260,42 @@
       "requires_stage_plan": false,
       "risk_level": "high",
       "expected_behavior": ["当前明确指令优先于长期记忆", "按本次要求先做证据审查", "仅在冲突会实质改变结果时提出一个聚焦确认", "不静默覆写或删除旧记忆"]
+    },
+    {
+      "id": 29,
+      "prompt": "岗位、待遇、来源和表格字段都已经核验并锁定。请把这些内容整理成一份可直接交付的单一 PDF，不再补充调查或改变岗位排序。",
+      "expected_workers": ["luna"],
+      "expected_review": "deterministic",
+      "requires_stage_plan": false,
+      "risk_level": "low",
+      "expected_behavior": ["Sol确认锁定输出包完整", "Luna组织PDF所需的标题、表格和说明文字", "Luna不新增待遇数据或改变岗位判断", "专用PDF工具落盘并执行渲染检查"]
+    },
+    {
+      "id": 30,
+      "prompt": "根据原始PDF判断哪些岗位适合我，再填入Excel并给出优先级。字段和筛选规则还没有确认。",
+      "expected_workers": ["terra"],
+      "expected_review": "sol_semantic",
+      "requires_stage_plan": false,
+      "risk_level": "high",
+      "expected_behavior": ["Terra先提取PDF事实与来源定位", "Sol决定筛选规则和优先级", "未锁定内容前不把任务交给Luna", "表格工具只在决策完成后写入Excel"]
+    },
+    {
+      "id": 31,
+      "prompt": "这些已确认字段原样写入一个Excel模板，只调整列宽、冻结首行和数字格式，不增加公式、不做分类判断。",
+      "expected_workers": ["luna"],
+      "expected_review": "deterministic",
+      "requires_stage_plan": false,
+      "risk_level": "low",
+      "expected_behavior": ["把固定字段和格式要求组成锁定输出包", "Luna返回结构化表格内容与格式说明", "专用表格工具负责实际写入和验证", "不让Luna修改数值或推导公式"]
+    },
+    {
+      "id": 32,
+      "prompt": "帮我判断这套换热器应该采用哪种强化结构，并计算关键尺寸，最后输出一份PDF方案。",
+      "expected_workers": ["terra"],
+      "expected_review": "sol_semantic",
+      "requires_stage_plan": true,
+      "risk_level": "high",
+      "expected_behavior": ["Terra提供结构与参数证据", "Sol承担方案选择和关键计算", "不能因为最终是PDF就提前交给Luna", "只有结论和内容锁定后才可由Luna组织成品输出"]
     }
   ]
 }
